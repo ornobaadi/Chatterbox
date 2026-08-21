@@ -58,6 +58,10 @@ export default function LoginPage() {
 
   const [phoneRaw, setPhoneRaw] = useState('');
   const [name, setName] = useState('');
+
+  useEffect(() => {
+    document.title = 'Sign In | Chatterbox';
+  }, []);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {

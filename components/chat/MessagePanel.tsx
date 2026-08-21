@@ -238,6 +238,16 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     return map;
   }, [activeConversation]);
 
+  // Dynamic Browser Tab Title
+  useEffect(() => {
+    if (headerTitle) {
+      document.title = `${headerTitle} | Chatterbox`;
+    }
+    return () => {
+      document.title = 'Messages | Chatterbox';
+    };
+  }, [headerTitle]);
+
   return (
     <div className="relative flex h-full w-full flex-col bg-background overflow-hidden">
 

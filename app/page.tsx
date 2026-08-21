@@ -34,6 +34,10 @@ import { useAuthStore } from '@/lib/store/authStore';
 export default function LandingPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+  React.useEffect(() => {
+    document.title = 'Chatterbox — Real-Time Messaging Platform';
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-x-hidden font-sans">
       {/* Subtle Micro-Grid Background */}

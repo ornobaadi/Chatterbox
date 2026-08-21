@@ -12,6 +12,10 @@ export default function ChatEmptyPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isGroupOpen, setIsGroupOpen] = useState(false);
 
+  React.useEffect(() => {
+    document.title = 'Messages | Chatterbox';
+  }, []);
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center bg-background/50 relative overflow-hidden">
       {/* Subtle background glow */}
