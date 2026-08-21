@@ -299,7 +299,7 @@ export default function LoginPage() {
               <div className="mt-6 rounded-2xl bg-muted/40 p-4 text-xs text-muted-foreground space-y-1 border border-border/40">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  <span>Specification Notice (PRD §3)</span>
+                  <span>Specification Notice (PRD)</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
                   Per the take-home requirements, authentication operates against the mock Render API without password/SMS verification. JWT tokens are automatically issued and securely persisted in <code className="font-mono text-primary font-semibold">localStorage</code> and cookies.

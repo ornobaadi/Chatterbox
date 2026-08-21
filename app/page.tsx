@@ -47,12 +47,9 @@ export default function LandingPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 transition-transform group-hover:scale-105">
                 <MessageSquare className="h-5 w-5 fill-current" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight text-foreground font-heading leading-none">
-                  Chatterbox
-                </span>
-                <span className="text-[10px] text-muted-foreground font-mono mt-0.5">v1.0.0 • Production</span>
-              </div>
+              <span className="text-xl font-bold tracking-tight text-foreground font-heading">
+                Chatterbox
+              </span>
             </Link>
 
             <div className="hidden md:flex items-center gap-1 border-l border-border/60 pl-6">
@@ -290,7 +287,7 @@ export default function LandingPage() {
             <AccordionItem value="item-3">
               <AccordionTrigger>Why is authentication zero-password in this implementation?</AccordionTrigger>
               <AccordionContent>
-                Per the Frontend Assignment specification (<code className="font-mono text-primary">PRD.md §3</code>), the live backend on Render provides a mock login endpoint (<code className="font-mono text-primary">POST /auth/login</code>) taking <code className="font-mono">&#123;&ldquo;phone&rdquo;, &ldquo;name&rdquo;&#125;</code> that auto-provisions JWT tokens without SMS or password gates. Chatterbox handles full session persistence in <code className="font-mono">localStorage</code> and cookies with automatic route protection.
+                Per the Frontend Assignment specification (<code className="font-mono text-primary">PRD.md</code>), the live backend on Render provides a mock login endpoint (<code className="font-mono text-primary">POST /auth/login</code>) taking <code className="font-mono">&#123;&ldquo;phone&rdquo;, &ldquo;name&rdquo;&#125;</code> that auto-provisions JWT tokens without SMS or password gates. Chatterbox handles full session persistence in <code className="font-mono">localStorage</code> and cookies with automatic route protection.
               </AccordionContent>
             </AccordionItem>
 
@@ -304,19 +301,19 @@ export default function LandingPage() {
         </section>
 
         {/* Call to Action Banner */}
-        <section className="py-14 px-4 max-w-4xl mx-auto">
-          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-indigo-500/10 p-8 sm:p-12 text-center backdrop-blur-xl relative overflow-hidden">
-            <div className="relative z-10 max-w-lg mx-auto space-y-3">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading text-foreground">
-                Ready to evaluate the live chat?
+        <section className="py-16 px-4 max-w-4xl mx-auto">
+          <div className="rounded-2xl border border-border/70 bg-card p-8 sm:p-12 text-center relative overflow-hidden shadow-xs">
+            <div className="relative z-10 max-w-md mx-auto space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                Ready to try Chatterbox?
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Sign in with any phone number or test across two browser windows to watch live Socket.io messaging in action.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Connect and experience real-time messaging with live sync, synthesized chimes, and instant updates.
               </p>
-              <div className="pt-3 flex items-center justify-center gap-3">
-                <Link href="/login">
-                  <Button size="lg" className="h-11 px-6 rounded-xl text-xs font-bold gap-2 shadow-lg shadow-primary/20">
-                    <span>Enter Chatterbox</span>
+              <div className="pt-2 flex items-center justify-center gap-3">
+                <Link href={isAuthenticated ? '/chat' : '/login'}>
+                  <Button size="lg" className="h-10 px-6 rounded-xl text-sm font-semibold gap-2 shadow-sm">
+                    <span>{isAuthenticated ? 'Open Messages' : 'Get Started'}</span>
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -333,10 +330,9 @@ export default function LandingPage() {
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <MessageSquare className="h-3.5 w-3.5 fill-current" />
             </div>
-            <span className="font-bold text-foreground">Chatterbox</span>
-            <span>— Frontend Developer Take-Home Assignment</span>
+            <span className="font-semibold text-foreground">Chatterbox</span>
           </div>
-          <p className="text-[11px] font-mono">
+          <p className="text-xs font-mono text-muted-foreground/70">
             Next.js 16 • React 19 • TypeScript • TailwindCSS • Zustand • TanStack Query • Socket.io
           </p>
         </div>

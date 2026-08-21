@@ -16,15 +16,16 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
 import { useUIStore } from '@/lib/store/uiStore';
 import { playSendChime } from '@/lib/audio';
+import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
-  Users,
   Info,
   RotateCw,
   Sparkles,
   Search,
   X,
   Calendar,
+  MessageCircle,
 } from 'lucide-react';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -238,154 +239,150 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   }, [activeConversation]);
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-background/95 overflow-hidden">
-      {/* Conversation Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-border/70 bg-card/85 backdrop-blur-md z-20 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {onBack && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBack}
-              className="h-8 w-8 p-0 rounded-xl md:hidden shrink-0"
+    <div className="relative flex h-full w-full flex-col bg-background overflow-hidden">
+
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-20 shrink-0">
+        <div className="flex h-16 items-center justify-between gap-3 border-b border-border/60 bg-background/85 backdrop-blur-md px-4">
+          {/* Left: back + avatar + name */}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors md:hidden cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-default"
+              onClick={() => isGroup && setIsGroupInfoOpen(true)}
+              disabled={!isGroup}
             >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
+              <Avatar
+                name={headerTitle}
+                size="md"
+                isGroup={isGroup}
+                className="shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate text-sm sm:text-base font-semibold text-foreground">
+                    {headerTitle}
+                  </h2>
+                  {isGroup && (
+                    <span className="shrink-0 rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      Group
+                    </span>
+                  )}
+                </div>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  {headerSubtitle}
+                </p>
+              </div>
+            </button>
+          </div>
 
-          <Avatar
-            name={headerTitle}
-            size="md"
-            isGroup={isGroup}
-            className="shrink-0 cursor-pointer"
-            onClick={() => isGroup && setIsGroupInfoOpen(true)}
-          />
-
-          <div
-            className="min-w-0 cursor-pointer"
-            onClick={() => isGroup && setIsGroupInfoOpen(true)}
-          >
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-foreground truncate">{headerTitle}</h2>
-              {isGroup && (
-                <span className="text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.2 rounded-md">
-                  Group
-                </span>
+          {/* Right: actions */}
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchingInChat(!isSearchingInChat);
+                if (isSearchingInChat) setChatSearchQuery('');
+              }}
+              className={cn(
+                'flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-colors cursor-pointer',
+                isSearchingInChat
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
-            </div>
-            <p className="text-[11px] text-muted-foreground truncate font-mono">{headerSubtitle}</p>
+              title="Search in conversation"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
+            {isGroup && (
+              <button
+                type="button"
+                onClick={() => setIsGroupInfoOpen(true)}
+                className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                title="Group details"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Header Actions */}
-        <div className="flex items-center gap-1.5">
-          {/* Search in chat button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setIsSearchingInChat(!isSearchingInChat);
-              if (isSearchingInChat) setChatSearchQuery('');
-            }}
-            className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-foreground"
-            title="Search in conversation"
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-
-          {isGroup && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsGroupInfoOpen(true)}
-              className="h-8 rounded-xl text-xs gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+        {/* Inline search reveal */}
+        {isSearchingInChat && (
+          <div className="flex items-center gap-2.5 border-b border-border/50 bg-muted/40 px-4 py-2 animate-in fade-in slide-in-from-top-1 duration-150">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+            <Input
+              placeholder="Filter messages…"
+              value={chatSearchQuery}
+              onChange={(e) => setChatSearchQuery(e.target.value)}
+              className="h-8 flex-1 border-none bg-transparent text-sm shadow-none focus-visible:ring-0 p-0"
+              autoFocus
+            />
+            {chatSearchQuery && (
+              <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                {messagesList.length} match{messagesList.length !== 1 ? 'es' : ''}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => { setIsSearchingInChat(false); setChatSearchQuery(''); }}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
             >
-              <Info className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Details</span>
-            </Button>
-          )}
-        </div>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* In-Chat Search Bar */}
-      {isSearchingInChat && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/60 animate-in fade-in slide-in-from-top-1 duration-150">
-          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <Input
-            placeholder="Filter messages in this conversation..."
-            value={chatSearchQuery}
-            onChange={(e) => setChatSearchQuery(e.target.value)}
-            className="h-8 text-xs bg-background/80"
-            autoFocus
-          />
-          {chatSearchQuery && (
-            <span className="text-[11px] text-muted-foreground whitespace-nowrap font-mono">
-              {messagesList.length} hit{messagesList.length === 1 ? '' : 's'}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setIsSearchingInChat(false);
-              setChatSearchQuery('');
-            }}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Message List Body */}
+      {/* ── Message List ── */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-1 relative"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-0 relative"
       >
-        {/* Loading State with shaped bubble skeletons */}
+        {/* Loading: shaped bubble skeletons */}
         {isLoading && (
-          <div className="space-y-4 py-4 max-w-xl mx-auto">
-            <div className="flex justify-start">
-              <Skeleton className="h-14 w-48 rounded-2xl rounded-tl-sm bg-muted/60" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-12 w-64 rounded-2xl rounded-tr-sm bg-primary/20" />
-            </div>
-            <div className="flex justify-start">
-              <Skeleton className="h-16 w-56 rounded-2xl rounded-tl-sm bg-muted/60" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-10 w-40 rounded-2xl rounded-tr-sm bg-primary/20" />
-            </div>
+          <div className="space-y-4 py-6 max-w-lg mx-auto">
+            {[{w:'w-44',side:'start'},{w:'w-60',side:'end'},{w:'w-52',side:'start'},{w:'w-36',side:'end'}].map((s,i)=>(
+              <div key={i} className={`flex justify-${s.side}`}>
+                <Skeleton className={`h-10 ${s.w} rounded-2xl ${s.side==='end' ? 'bg-primary/15' : 'bg-muted/60'}`} />
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error */}
         {isError && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-12">
-            <p className="text-sm">Could not load message history</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="h-8.5 text-xs gap-1.5 rounded-xl"
-            >
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-12 text-center text-muted-foreground">
+            <p className="text-sm">Could not load messages</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 text-xs gap-1.5 rounded-xl">
               <RotateCw className="h-3.5 w-3.5" />
-              <span>Retry</span>
+              Retry
             </Button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty state */}
         {!isLoading && !isError && messagesList.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-16">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-inner">
-              <Sparkles className="h-7 w-7" />
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+              <MessageCircle className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-base font-bold text-foreground">No messages here yet</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Break the ice! Send a message below to start the conversation.
+              <p className="text-sm font-semibold text-foreground">No messages yet</p>
+              <p className="mt-1 max-w-[22ch] text-xs text-muted-foreground">
+                Say hello! Your conversation starts here.
               </p>
             </div>
           </div>
