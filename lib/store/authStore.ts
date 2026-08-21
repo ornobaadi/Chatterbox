@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User } from '../types';
 import { authApi, LoginPayload } from '../api/auth';
+import { useChatStore } from './chatStore';
 
 interface AuthState {
   user: User | null;
@@ -72,6 +73,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Set cookie as well for any SSR check
         document.cookie = `chatterbox_token=${response.token}; path=/; max-age=2592000; SameSite=Lax`;
       }
+      useChatStore.getState().resetChatStore();
       set({
         token: response.token,
         user: response.user,
@@ -94,6 +96,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.removeItem(USER_KEY);
       document.cookie = 'chatterbox_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
+    useChatStore.getState().resetChatStore();
     set({
       user: null,
       token: null,

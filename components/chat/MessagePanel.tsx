@@ -57,8 +57,9 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
 
   // Fetch Conversation metadata from query cache or list
   const { data: conversations = [] } = useQuery<Conversation[]>({
-    queryKey: ['conversations'],
+    queryKey: ['conversations', currentUserId],
     queryFn: conversationsApi.getConversations,
+    enabled: Boolean(currentUserId),
   });
 
   const activeConversation = conversations.find((c) => c._id === conversationId);
@@ -70,9 +71,9 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['messages', conversationId],
+    queryKey: ['messages', conversationId, currentUserId],
     queryFn: () => conversationsApi.getMessages(conversationId),
-    enabled: Boolean(conversationId),
+    enabled: Boolean(conversationId) && Boolean(currentUserId),
   });
 
   // Sync server history into chat store
@@ -83,7 +84,12 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   }, [historyData, conversationId, setMessagesForConversation]);
 
   const messagesList = useMemo(() => {
-    return storeMessagesMap[conversationId] || [];
+    const raw = storeMessagesMap[conversationId] || [];
+    return [...raw].sort((a, b) => {
+      const timeA = new Date(a.createdAt).getTime() || 0;
+      const timeB = new Date(b.createdAt).getTime() || 0;
+      return timeA - timeB;
+    });
   }, [storeMessagesMap, conversationId]);
 
   // Smooth scroll to bottom

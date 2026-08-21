@@ -54,9 +54,10 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
     isError,
     refetch,
   } = useQuery<Conversation[]>({
-    queryKey: ['conversations'],
+    queryKey: ['conversations', user?._id],
     queryFn: conversationsApi.getConversations,
     refetchInterval: 15000,
+    enabled: Boolean(user?._id),
   });
 
   const handleLogout = () => {

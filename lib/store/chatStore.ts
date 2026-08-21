@@ -13,7 +13,16 @@ interface ChatState {
   markMessageFailed: (conversationId: string, tempId: string) => void;
   addIncomingSocketMessage: (message: Message) => void;
   setSocketConnected: (connected: boolean) => void;
+  resetChatStore: () => void;
 }
+
+const sortChronologically = (list: Message[]): Message[] => {
+  return [...list].sort((a, b) => {
+    const timeA = new Date(a.createdAt).getTime() || 0;
+    const timeB = new Date(b.createdAt).getTime() || 0;
+    return timeA - timeB;
+  });
+};
 
 export const useChatStore = create<ChatState>((set, get) => ({
   activeConversationId: null,
@@ -32,10 +41,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const existingIds = new Set(messages.map(m => m._id));
       const filteredPending = pendingOptimistic.filter(m => !existingIds.has(m._id) && !existingIds.has(m.tempId || ''));
 
+      const combined = [...messages, ...filteredPending];
       return {
         messages: {
           ...state.messages,
-          [conversationId]: [...messages, ...filteredPending],
+          [conversationId]: sortChronologically(combined),
         },
       };
     });
@@ -58,7 +68,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return {
         messages: {
           ...state.messages,
-          [conversationId]: [...currentList, optimisticMessage],
+          [conversationId]: sortChronologically([...currentList, optimisticMessage]),
         },
       };
     });
@@ -83,7 +93,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return {
         messages: {
           ...state.messages,
-          [conversationId]: updatedList,
+          [conversationId]: sortChronologically(updatedList),
         },
       };
     });
@@ -105,14 +115,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return {
         messages: {
           ...state.messages,
-          [conversationId]: updatedList,
+          [conversationId]: sortChronologically(updatedList),
         },
       };
     });
   },
 
   addIncomingSocketMessage: (rawMessage) => {
-    // Normalize socket message format if needed (e.g. { id, createdAt timestamp })
     const normalized: Message = {
       _id: (rawMessage as any)._id || (rawMessage as any).id,
       conversation: rawMessage.conversation,
@@ -144,7 +153,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return {
           messages: {
             ...state.messages,
-            [convId]: updatedList,
+            [convId]: sortChronologically(updatedList),
           },
         };
       }
@@ -152,11 +161,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return {
         messages: {
           ...state.messages,
-          [convId]: [...currentList, normalized],
+          [convId]: sortChronologically([...currentList, normalized]),
         },
       };
     });
   },
 
   setSocketConnected: (connected) => set({ socketConnected: connected }),
+
+  resetChatStore: () => set({ messages: {}, activeConversationId: null, socketConnected: false }),
 }));

@@ -28,6 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [initAuth]);
 
   useEffect(() => {
+    // Clear previous user cache on session switch
+    queryClient.clear();
+
     if (isAuthenticated && token) {
       const socket = initSocket(token, queryClient);
       return () => {
