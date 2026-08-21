@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { Message, DirectParticipant } from '@/lib/types';
 import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Check, CheckCheck, Loader2, AlertCircle, RotateCw } from 'lucide-react';
+import { Check, CheckCheck, Loader2, AlertCircle, RotateCw, Copy } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
+import { toast } from 'sonner';
 
 interface MessageBubbleProps {
   message: Message;
@@ -40,11 +41,19 @@ export function MessageBubble({
   senderParticipant,
   onRetry,
 }: MessageBubbleProps) {
-  const [showFullTimestamp, setShowFullTimestamp] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const senderName = senderParticipant?.name || 'Participant';
   const timeFormatted = formatTime(message.createdAt);
   const status = message.status || 'sent';
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(message.text);
+    setCopied(true);
+    toast.success('Message copied to clipboard', { duration: 1500 });
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div
@@ -53,8 +62,6 @@ export function MessageBubble({
         isMe ? 'justify-end' : 'justify-start',
         isFirstInGroup ? 'mt-3' : 'mt-0.5'
       )}
-      onMouseEnter={() => setShowFullTimestamp(true)}
-      onMouseLeave={() => setShowFullTimestamp(false)}
     >
       {/* Sender Avatar in Group Chats (received only, displayed on last item in cluster) */}
       {!isMe && isGroup && (
@@ -134,6 +141,18 @@ export function MessageBubble({
                 )}
               </span>
             )}
+
+            {/* Quick Copy on Hover */}
+            <button
+              onClick={handleCopy}
+              className={cn(
+                'ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer',
+                isMe ? 'text-primary-foreground/80' : 'text-muted-foreground'
+              )}
+              title="Copy text"
+            >
+              {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+            </button>
           </div>
         </div>
 

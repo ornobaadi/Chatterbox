@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "@/app/providers"
+import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils";
 
 const geistHeading = Geist({subsets:['latin'],variable:'--font-heading'});
@@ -29,6 +30,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Providers>
             {children}
+            <Toaster />
           </Providers>
         </ThemeProvider>
       </body>

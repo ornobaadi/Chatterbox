@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
+import { playSendChime } from '@/lib/audio';
 import {
   ArrowLeft,
   Users,
@@ -168,6 +169,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const handleSendMessage = (text: string) => {
     if (!currentUserId) return;
     const tempId = addOptimisticMessage(conversationId, text, currentUserId);
+    playSendChime();
     scrollToBottom('smooth');
     sendMutation.mutate({ text, tempId });
   };

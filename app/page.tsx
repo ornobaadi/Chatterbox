@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { InteractiveChatPreview } from '@/components/landing/InteractiveChatPreview';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   MessageSquare,
   Zap,
@@ -45,6 +46,7 @@ export default function LandingPage() {
           </Link>
 
           <nav className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
             <Link
               href="/login"
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5"

@@ -102,9 +102,14 @@ export function GroupInfoModal({
   };
 
   const existingParticipantIds = new Set(participants.map((p) => p._id));
-  const filteredCandidates = (searchResults || []).filter(
-    (u) => !existingParticipantIds.has(u._id)
-  );
+  const filteredCandidates = (searchResults || []).filter((u) => {
+    if (existingParticipantIds.has(u._id)) return false;
+    if (!memberSearchQuery.trim()) return true;
+    const q = memberSearchQuery.trim().toLowerCase();
+    const nameMatch = u.name?.toLowerCase().includes(q);
+    const phoneMatch = u.phone?.toLowerCase().includes(q);
+    return nameMatch || phoneMatch;
+  });
 
   return (
     <Modal

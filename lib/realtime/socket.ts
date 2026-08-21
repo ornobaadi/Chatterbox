@@ -3,6 +3,7 @@ import { SOCKET_BASE_URL } from '../api/client';
 import { useChatStore } from '../store/chatStore';
 import { QueryClient } from '@tanstack/react-query';
 import { Conversation, Message } from '../types';
+import { playIncomingChime } from '../audio';
 
 let socketInstance: Socket | null = null;
 
@@ -41,6 +42,9 @@ export const initSocket = (token: string, queryClient?: QueryClient): Socket => 
   socketInstance.on('message:new', (rawMessage: any) => {
     const chatStore = useChatStore.getState();
     chatStore.addIncomingSocketMessage(rawMessage);
+
+    // Audio chime if incoming from another user
+    playIncomingChime();
 
     // Update conversation lastMessage in TanStack query cache if queryClient is provided
     if (queryClient) {

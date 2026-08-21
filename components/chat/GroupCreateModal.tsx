@@ -95,9 +95,14 @@ export function GroupCreateModal({
     });
   };
 
-  const filteredResults = (searchResults || []).filter(
-    (u) => u._id !== currentUserId
-  );
+  const filteredResults = (searchResults || []).filter((u) => {
+    if (u._id === currentUserId) return false;
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    const nameMatch = u.name?.toLowerCase().includes(q);
+    const phoneMatch = u.phone?.toLowerCase().includes(q);
+    return nameMatch || phoneMatch;
+  });
 
   return (
     <Modal

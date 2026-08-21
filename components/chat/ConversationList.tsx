@@ -7,12 +7,15 @@ import { Conversation } from '@/lib/types';
 import { ConversationListItem } from './ConversationListItem';
 import { SearchStartConversation } from './SearchStartConversation';
 import { GroupCreateModal } from './GroupCreateModal';
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
+import { isSoundEnabled, setSoundEnabled } from '@/lib/audio';
 import {
   MessageSquarePlus,
   Users,
@@ -22,8 +25,12 @@ import {
   WifiOff,
   RotateCw,
   Sparkles,
+  Volume2,
+  VolumeX,
+  Keyboard,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ConversationListProps {
   activeId: string | null;
@@ -38,6 +45,8 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
   const [filterQuery, setFilterQuery] = useState('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
 
   const {
     data: conversations = [],
@@ -47,12 +56,19 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
   } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
     queryFn: conversationsApi.getConversations,
-    refetchInterval: 15000, // Poll fallback in addition to socket
+    refetchInterval: 15000,
   });
 
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+    toast.info(next ? 'Sound notifications enabled' : 'Sound notifications muted', { duration: 1500 });
   };
 
   const filteredConversations = conversations.filter((conv) => {
@@ -100,11 +116,12 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
 
           {/* Quick Actions */}
           <div className="flex items-center gap-1.5">
+            <ThemeToggle />
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsSearchModalOpen(true)}
-              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 cursor-pointer"
               title="New direct message"
             >
               <MessageSquarePlus className="h-4 w-4" />
@@ -113,7 +130,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
               variant="outline"
               size="sm"
               onClick={() => setIsGroupModalOpen(true)}
-              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 cursor-pointer"
               title="New group conversation"
             >
               <Users className="h-4 w-4" />
@@ -156,7 +173,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              className="h-8 text-xs gap-1.5 rounded-lg"
+              className="h-8 text-xs gap-1.5 rounded-lg cursor-pointer"
             >
               <RotateCw className="h-3.5 w-3.5" />
               <span>Retry</span>
@@ -179,7 +196,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
               <Button
                 size="sm"
                 onClick={() => setIsSearchModalOpen(true)}
-                className="h-8 text-xs rounded-xl gap-1.5"
+                className="h-8 text-xs rounded-xl gap-1.5 cursor-pointer"
               >
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 <span>New Chat</span>
@@ -188,7 +205,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
                 variant="outline"
                 size="sm"
                 onClick={() => setIsGroupModalOpen(true)}
-                className="h-8 text-xs rounded-xl gap-1.5"
+                className="h-8 text-xs rounded-xl gap-1.5 cursor-pointer"
               >
                 <Users className="h-3.5 w-3.5" />
                 <span>New Group</span>
@@ -224,15 +241,40 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleLogout}
-          className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
-          title="Sign out"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {/* Sound Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleSound}
+            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+            title={soundOn ? 'Mute sound effects' : 'Enable sound effects'}
+          >
+            {soundOn ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <VolumeX className="h-3.5 w-3.5 text-muted-foreground/60" />}
+          </Button>
+
+          {/* Keyboard Shortcuts */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsShortcutsOpen(true)}
+            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Keyboard shortcuts (?)"
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+          </Button>
+
+          {/* Sign Out */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 cursor-pointer"
+            title="Sign out"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Modals */}
@@ -247,6 +289,12 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
         onClose={() => setIsGroupModalOpen(false)}
         onSelectConversation={(id) => onSelect(id)}
       />
+
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }
+

@@ -67,8 +67,15 @@ export function SearchStartConversation({
     createConvMutation.mutate(user._id);
   };
 
-  // Filter out current user from results
-  const filteredUsers = (users || []).filter((u) => u._id !== currentUserId);
+  // Filter out current user from results and strictly match query
+  const filteredUsers = (users || []).filter((u) => {
+    if (u._id === currentUserId) return false;
+    if (!debouncedQuery) return true;
+    const q = debouncedQuery.toLowerCase();
+    const nameMatch = u.name?.toLowerCase().includes(q);
+    const phoneMatch = u.phone?.toLowerCase().includes(q);
+    return nameMatch || phoneMatch;
+  });
 
   return (
     <Modal
