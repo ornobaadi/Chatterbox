@@ -3,7 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { InteractiveChatPreview } from '@/components/landing/InteractiveChatPreview';
+import { LiveApiExplorer } from '@/components/landing/LiveApiExplorer';
+import { ArchitectureVisualizer } from '@/components/landing/ArchitectureVisualizer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   MessageSquare,
@@ -18,6 +23,11 @@ import {
   CheckCircle2,
   ExternalLink,
   ChevronRight,
+  Activity,
+  Terminal,
+  Volume2,
+  FileText,
+  Lock,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -25,37 +35,65 @@ export default function LandingPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-x-hidden">
-      {/* Dynamic Background Glows */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-primary/15 blur-[140px]" />
-        <div className="absolute -bottom-40 left-1/3 h-[600px] w-[600px] rounded-full bg-primary/10 blur-[130px]" />
-      </div>
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-x-hidden font-sans">
+      {/* Subtle Micro-Grid Background */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
       {/* Navigation Header */}
-      <header className="relative z-20 border-b border-border/60 bg-background/70 backdrop-blur-xl sticky top-0">
+      <header className="relative z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25 transition-transform group-hover:scale-105">
-              <MessageSquare className="h-5 w-5 fill-current" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-foreground font-heading">
-              Chatterbox
-            </span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 transition-transform group-hover:scale-105">
+                <MessageSquare className="h-5 w-5 fill-current" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold tracking-tight text-foreground font-heading leading-none">
+                  Chatterbox
+                </span>
+                <span className="text-[10px] text-muted-foreground font-mono mt-0.5">v1.0.0 • Production</span>
+              </div>
+            </Link>
 
-          <nav className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden md:flex items-center gap-1 border-l border-border/60 pl-6">
+              <a
+                href="#interactive-demo"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1"
+              >
+                Live Preview
+              </a>
+              <a
+                href="#architecture"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1"
+              >
+                Architecture
+              </a>
+              <a
+                href="#api-inspector"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1"
+              >
+                API Explorer
+              </a>
+              <a
+                href="#technical-specs"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1"
+              >
+                Specs & FAQ
+              </a>
+            </div>
+          </div>
+
+          <nav className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <Link
               href="/login"
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 hidden sm:inline-block"
             >
               Sign In
             </Link>
             <Link href={isAuthenticated ? '/chat' : '/login'}>
-              <Button size="sm" className="h-9 rounded-xl text-xs font-semibold gap-1.5 shadow-md shadow-primary/20">
-                <span>{isAuthenticated ? 'Open App' : 'Get Started'}</span>
+              <Button size="sm" className="h-9 rounded-xl text-xs font-bold gap-1.5 shadow-md shadow-primary/20">
+                <span>{isAuthenticated ? 'Open App' : 'Launch Chat'}</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
@@ -65,141 +103,217 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main className="relative z-10">
-        <section className="pt-16 pb-12 sm:pt-24 sm:pb-16 px-4 text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <Zap className="h-3.5 w-3.5" />
-            <span>Socket.io Real-time Pipeline • Optimistic UI Engine</span>
+        <section className="pt-12 pb-10 sm:pt-20 sm:pb-14 px-4 text-center max-w-4xl mx-auto">
+          {/* Engineering Pill */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/50 px-3.5 py-1.5 text-xs font-semibold text-foreground mb-6 shadow-xs backdrop-blur-sm">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-mono text-[11px] text-muted-foreground">OAS 3.0 API Target</span>
+            <span className="text-border">|</span>
+            <span className="text-primary font-bold">Zero-Jitter Optimistic Engine</span>
           </div>
 
           {/* Heading */}
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight font-heading leading-[1.1] text-foreground">
-            Modern messaging built for{' '}
-            <span className="bg-gradient-to-r from-primary via-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              speed, polish, & feel.
+            The real-time chat engine built for{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-indigo-600">
+              sub-millisecond feel.
             </span>
           </h1>
 
           {/* Subheading */}
-          <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Instant optimistic message sending, zero-jitter state reconciliation, tactile message clustering, and real-time Socket.io synchronization for direct & group conversations.
+          <p className="mt-5 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Engineered with strict separation between async server caching (TanStack Query) and real-time WebSocket state (Zustand + Socket.io), message clustering, and synthesized Web Audio feedback.
           </p>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href={isAuthenticated ? '/chat' : '/login'}>
-              <Button size="lg" className="h-12 px-6 rounded-2xl text-sm font-bold gap-2 shadow-xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all">
-                <span>Launch Chat App</span>
+              <Button size="lg" className="h-11 px-6 rounded-xl text-xs sm:text-sm font-bold gap-2 shadow-lg shadow-primary/20 hover:scale-102 active:scale-98 transition-all">
+                <span>{isAuthenticated ? 'Open Chatterbox' : 'Test Live Application'}</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <a
-              href="#interactive-demo"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-border/80 bg-card/80 px-5 text-sm font-semibold text-foreground hover:bg-muted/70 transition-all backdrop-blur-sm"
+              href="#api-inspector"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-border/80 bg-card px-4 text-xs sm:text-sm font-semibold text-foreground hover:bg-muted/60 transition-all shadow-xs"
             >
-              <span>Test Interactive Demo</span>
+              <Terminal className="h-4 w-4 mr-2 text-primary" />
+              <span>Inspect Live API</span>
             </a>
           </div>
 
           {/* Metric Badges */}
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6 border-t border-border/50">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-extrabold text-foreground font-heading">0ms</span>
-              <span className="text-xs text-muted-foreground mt-0.5">Optimistic UI Latency</span>
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-border/60">
+            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
+              <span className="text-xl font-extrabold text-foreground font-mono">&lt; 1ms</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Optimistic Dispatch</p>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-extrabold text-foreground font-heading">100%</span>
-              <span className="text-xs text-muted-foreground mt-0.5">Socket.io Live Push</span>
+            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
+              <span className="text-xl font-extrabold text-emerald-500 font-mono">100%</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Socket.io Multicast</p>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-extrabold text-foreground font-heading">3+ Members</span>
-              <span className="text-xs text-muted-foreground mt-0.5">Group Admin Controls</span>
+            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
+              <span className="text-xl font-extrabold text-indigo-500 font-mono">3+ Users</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Group Admin Matrix</p>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-extrabold text-foreground font-heading">Auto-Scroll</span>
-              <span className="text-xs text-muted-foreground mt-0.5">Smart History Protection</span>
+            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
+              <span className="text-xl font-extrabold text-foreground font-mono">Web Audio</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Synthesized Chimes</p>
             </div>
           </div>
         </section>
 
         {/* Live Interactive Product Showcase */}
-        <section id="interactive-demo" className="py-12 px-4 max-w-5xl mx-auto">
-          <div className="text-center mb-8">
+        <section id="interactive-demo" className="py-10 px-4 max-w-5xl mx-auto scroll-mt-20">
+          <div className="text-center mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
               Experience the Interface Live
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              Interact directly with the simulated Chatterbox client below. Send messages, test real-time typing responses, and switch between 1:1 and group views.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
+              Interact directly with the simulated Chatterbox client below. Send messages, hear synthesized sound cues, test real-time typing responses, and switch between 1:1 and group views.
             </p>
           </div>
 
           <InteractiveChatPreview />
         </section>
 
-        {/* Core Architecture Highlights */}
-        <section className="py-16 px-4 max-w-6xl mx-auto border-t border-border/50">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+        {/* Interactive Architecture & State Visualizer */}
+        <section id="architecture" className="py-12 px-4 max-w-5xl mx-auto scroll-mt-20">
+          <div className="text-center mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
-              Engineered with Senior-Level Care
+              Engineered for Zero-Jitter Precision
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-              Every interaction was crafted with attention to edge cases, network lag, and visual elegance.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
+              Inspect how optimistic reconciliation, message clustering, and dual-state architecture guarantee high performance without UI stutter.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <div className="rounded-3xl border border-border/70 bg-card/60 p-6 backdrop-blur-md hover:border-primary/40 transition-all group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform">
-                <Zap className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-foreground font-heading">
-                Optimistic Send & Inline Retry
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Messages render immediately in the UI upon submission with <code className="text-xs font-mono text-primary font-semibold">status: sending</code>. If network fails, bubbles show an attached inline Retry button rather than toast-and-forget alerts.
-              </p>
-            </div>
+          <ArchitectureVisualizer />
+        </section>
 
-            {/* Feature 2 */}
-            <div className="rounded-3xl border border-border/70 bg-card/60 p-6 backdrop-blur-md hover:border-primary/40 transition-all group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 mb-4 group-hover:scale-110 transition-transform">
-                <Layers className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-foreground font-heading">
-                Message Clustering & Rhythm
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Consecutive messages from the same participant within 2 minutes merge with tight vertical rhythm, flattening adjacent borders and suppressing redundant avatars.
-              </p>
-            </div>
+        {/* Live API Inspector */}
+        <section id="api-inspector" className="py-12 px-4 max-w-5xl mx-auto scroll-mt-20">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
+              Live Backend API Inspector
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
+              Execute live OpenAPI queries directly against the Render backend database and inspect exact JSON response structures.
+            </p>
+          </div>
 
-            {/* Feature 3 */}
-            <div className="rounded-3xl border border-border/70 bg-card/60 p-6 backdrop-blur-md hover:border-primary/40 transition-all group">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500 mb-4 group-hover:scale-110 transition-transform">
-                <Cpu className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-foreground font-heading">
-                Dual State Synchronization
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Clean separation between server cache (TanStack Query) and real-time active session stream (Zustand + Socket.io), with seamless deduplication on incoming WebSocket broadcasts.
-              </p>
-            </div>
+          <LiveApiExplorer />
+        </section>
+
+        {/* Technical Architecture Comparison Matrix */}
+        <section className="py-14 px-4 max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
+              Architecture Comparison
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
+              How Chatterbox&apos;s reactive architecture compares against traditional polling implementations.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border/70 bg-card/60 backdrop-blur-xl overflow-x-auto shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border/70 bg-muted/40 font-mono text-[11px] text-muted-foreground">
+                  <th className="p-4 font-bold">CAPABILITY</th>
+                  <th className="p-4 font-bold text-primary">CHATTERBOX ARCHITECTURE</th>
+                  <th className="p-4 font-bold">TRADITIONAL POLLING APPS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">Message Sending Latency</td>
+                  <td className="p-4 font-medium text-emerald-500 font-mono">&lt; 1ms (Optimistic Dispatch + TempId)</td>
+                  <td className="p-4 text-muted-foreground">200ms–800ms (Awaits network response)</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">Network Failure Handling</td>
+                  <td className="p-4 font-medium text-foreground">Inline attached [Retry] button on bubble</td>
+                  <td className="p-4 text-muted-foreground">Generic toast alert; message discarded</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">Real-Time Synchronization</td>
+                  <td className="p-4 font-medium text-foreground">Socket.io persistent WebSocket connection</td>
+                  <td className="p-4 text-muted-foreground">5s–10s periodic setInterval polling</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">Message Clustering</td>
+                  <td className="p-4 font-medium text-foreground">Dynamic vertical compression (&lt; 2m rule)</td>
+                  <td className="p-4 text-muted-foreground">Static repeated sender avatars & timestamps</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">History Scroll Protection</td>
+                  <td className="p-4 font-medium text-foreground">Floating &ldquo;New messages ↓&rdquo; pill if scrolled up</td>
+                  <td className="p-4 text-muted-foreground">Violent scroll snap or lost context</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-semibold text-foreground">Audio Feedback</td>
+                  <td className="p-4 font-medium text-foreground">Synthesized Web Audio API (0 asset payloads)</td>
+                  <td className="p-4 text-muted-foreground">Heavy static MP3 assets or none</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 
+        {/* Technical FAQ Accordion */}
+        <section id="technical-specs" className="py-12 px-4 max-w-4xl mx-auto scroll-mt-20">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
+              Technical Specifications & Architecture FAQ
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
+              Key engineering decisions documented for evaluation.
+            </p>
+          </div>
+
+          <Accordion type="single" defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>How does Chatterbox manage dual-state synchronization?</AccordionTrigger>
+              <AccordionContent>
+                We maintain a strict boundary between async remote entity cache and the active real-time stream. <strong>TanStack Query</strong> manages conversation list indexing and user query caches with structured invalidation keys (<code className="font-mono text-primary">[&apos;conversations&apos;, user._id]</code>). <strong>Zustand</strong> manages optimistic local message dispatch and Socket.io incoming event streams with store-level deduplication, ensuring 60 FPS rendering without query thrashing.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2">
+              <AccordionTrigger>How is real-time message ordering guaranteed?</AccordionTrigger>
+              <AccordionContent>
+                The backend delivers messages in reverse-chronological order while Socket.io delivers live items with Unix timestamps. Chatterbox normalizes both timestamps into ISO strings and strictly sorts the collection in <strong>ascending chronological order</strong> (<code className="font-mono text-primary">timeA - timeB</code>) before rendering, guaranteeing earliest messages at the top and newest messages at the bottom.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Why is authentication zero-password in this implementation?</AccordionTrigger>
+              <AccordionContent>
+                Per the Frontend Assignment specification (<code className="font-mono text-primary">PRD.md §3</code>), the live backend on Render provides a mock login endpoint (<code className="font-mono text-primary">POST /auth/login</code>) taking <code className="font-mono">&#123;&ldquo;phone&rdquo;, &ldquo;name&rdquo;&#125;</code> that auto-provisions JWT tokens without SMS or password gates. Chatterbox handles full session persistence in <code className="font-mono">localStorage</code> and cookies with automatic route protection.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4">
+              <AccordionTrigger>How do the synthesized audio chimes work?</AccordionTrigger>
+              <AccordionContent>
+                Rather than loading external MP3 audio files over the network, Chatterbox utilizes the browser&apos;s native <strong>Web Audio API</strong> (<code className="font-mono text-primary">AudioContext</code>). It synthesizes pleasant sinusoidal chime frequencies (659.25Hz E5 ➔ 880Hz A5) on incoming messages and a subtle swoosh on send, with persistent mute/unmute state in the UI.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </section>
+
         {/* Call to Action Banner */}
-        <section className="py-16 px-4 max-w-4xl mx-auto">
-          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-purple-500/10 p-8 sm:p-12 text-center backdrop-blur-xl relative overflow-hidden">
-            <div className="relative z-10 max-w-lg mx-auto">
+        <section className="py-14 px-4 max-w-4xl mx-auto">
+          <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-indigo-500/10 p-8 sm:p-12 text-center backdrop-blur-xl relative overflow-hidden">
+            <div className="relative z-10 max-w-lg mx-auto space-y-3">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading text-foreground">
-                Ready to explore Chatterbox?
+                Ready to evaluate the live chat?
               </h2>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                Sign in with any phone number to test direct chats, group dynamics, and real-time updates.
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Sign in with any phone number or test across two browser windows to watch live Socket.io messaging in action.
               </p>
-              <div className="mt-6 flex items-center justify-center gap-3">
+              <div className="pt-3 flex items-center justify-center gap-3">
                 <Link href="/login">
                   <Button size="lg" className="h-11 px-6 rounded-xl text-xs font-bold gap-2 shadow-lg shadow-primary/20">
                     <span>Enter Chatterbox</span>
@@ -213,17 +327,17 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/60 bg-muted/20 py-8 px-4 text-center text-xs text-muted-foreground">
+      <footer className="relative z-10 border-t border-border/60 bg-muted/20 py-8 px-4 text-xs text-muted-foreground">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <MessageSquare className="h-3.5 w-3.5 fill-current" />
             </div>
             <span className="font-bold text-foreground">Chatterbox</span>
-            <span>— Frontend Developer Assignment</span>
+            <span>— Frontend Developer Take-Home Assignment</span>
           </div>
-          <p className="text-[11px]">
-            Built with Next.js 16, React 19, TypeScript, TailwindCSS, Zustand, TanStack Query & Socket.io.
+          <p className="text-[11px] font-mono">
+            Next.js 16 • React 19 • TypeScript • TailwindCSS • Zustand • TanStack Query • Socket.io
           </p>
         </div>
       </footer>
