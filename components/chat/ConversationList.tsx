@@ -8,6 +8,7 @@ import { ConversationListItem } from './ConversationListItem';
 import { SearchStartConversation } from './SearchStartConversation';
 import { GroupCreateModal } from './GroupCreateModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { ChatPreferencesModal } from './ChatPreferencesModal';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,7 +29,10 @@ import {
   Volume2,
   VolumeX,
   Keyboard,
+  Settings,
+  User,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -37,15 +41,19 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
 }
 
+type TabFilter = 'all' | 'direct' | 'group';
+
 export function ConversationList({ activeId, onSelect }: ConversationListProps) {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const socketConnected = useChatStore((s) => s.socketConnected);
 
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [filterQuery, setFilterQuery] = useState('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
 
   const {
@@ -73,6 +81,11 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
   };
 
   const filteredConversations = conversations.filter((conv) => {
+    // 1. Tab category filter
+    if (activeTab === 'direct' && conv.type !== 'direct') return false;
+    if (activeTab === 'group' && conv.type !== 'group') return false;
+
+    // 2. Query search filter
     if (!filterQuery.trim()) return true;
     const q = filterQuery.toLowerCase();
     if (conv.type === 'group') {
@@ -83,40 +96,44 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
     return participantName.includes(q) || participantPhone.includes(q);
   });
 
+  const directCount = conversations.filter((c) => c.type === 'direct').length;
+  const groupCount = conversations.filter((c) => c.type === 'group').length;
+
   return (
-    <div className="flex h-full w-full flex-col bg-card/60 backdrop-blur-md border-r border-border/80 select-none">
+    <div className="flex h-full w-full flex-col bg-card/70 backdrop-blur-md border-r border-border/80 select-none">
       {/* Header */}
-      <div className="p-4 pb-3 border-b border-border/50">
-        <div className="flex items-center justify-between mb-3">
+      <div className="p-3.5 pb-3 border-b border-border/50 space-y-2.5">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight text-foreground font-heading">
+            <h2 className="text-lg font-bold tracking-tight text-foreground font-heading">
               Messages
             </h2>
             {/* Live Socket Status indicator */}
             <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+              className={cn(
+                'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all',
                 socketConnected
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                   : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-              }`}
-              title={socketConnected ? 'Real-time WebSocket Live' : 'Connecting to WebSocket...'}
+              )}
+              title={socketConnected ? 'Real-time WebSocket connection active' : 'Connecting to WebSocket...'}
             >
               {socketConnected ? (
                 <>
-                  <Wifi className="h-2.5 w-2.5" />
-                  <span>Live</span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-mono text-[9.5px]">Live</span>
                 </>
               ) : (
                 <>
                   <WifiOff className="h-2.5 w-2.5" />
-                  <span>Syncing</span>
+                  <span className="font-mono text-[9.5px]">Syncing</span>
                 </>
               )}
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <ThemeToggle />
             <Button
               variant="outline"
@@ -143,11 +160,56 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
           <Input
-            placeholder="Filter chats..."
+            placeholder="Filter conversations..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="pl-8.5 h-9 text-xs rounded-xl bg-background/50"
+            className="pl-8.5 h-8.5 text-xs rounded-xl bg-background/50"
           />
+        </div>
+
+        {/* Category Tabs */}
+        <div className="grid grid-cols-3 gap-1 bg-muted/60 p-0.5 rounded-xl border border-border/50 text-[11px]">
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={cn(
+              'py-1 px-2 rounded-lg font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1',
+              activeTab === 'all'
+                ? 'bg-background text-foreground shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>All</span>
+            <span className="text-[9.5px] opacity-70 font-mono">({conversations.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('direct')}
+            className={cn(
+              'py-1 px-2 rounded-lg font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1',
+              activeTab === 'direct'
+                ? 'bg-background text-foreground shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>Direct</span>
+            <span className="text-[9.5px] opacity-70 font-mono">({directCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('group')}
+            className={cn(
+              'py-1 px-2 rounded-lg font-semibold transition-all text-center cursor-pointer flex items-center justify-center gap-1',
+              activeTab === 'group'
+                ? 'bg-background text-foreground shadow-xs font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>Groups</span>
+            <span className="text-[9.5px] opacity-70 font-mono">({groupCount})</span>
+          </button>
         </div>
       </div>
 
@@ -227,31 +289,31 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
 
         {!isLoading && conversations.length > 0 && filteredConversations.length === 0 && (
           <div className="p-6 text-center text-xs text-muted-foreground">
-            No chats match &ldquo;{filterQuery}&rdquo;
+            No chats in this category match &ldquo;{filterQuery}&rdquo;
           </div>
         )}
       </div>
 
       {/* User Profile Footer */}
-      <div className="p-3 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+      <div className="p-2.5 border-t border-border/50 bg-muted/20 flex items-center justify-between">
         <div className="flex items-center gap-2.5 min-w-0">
           <Avatar name={user?.name || 'Me'} size="sm" />
           <div className="min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{user?.name}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{user?.phone}</p>
+            <p className="text-[10px] text-muted-foreground truncate font-mono">{user?.phone}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Sound Toggle */}
+          {/* Chat Preferences Gear */}
           <Button
             variant="outline"
             size="sm"
-            onClick={toggleSound}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            title={soundOn ? 'Mute sound effects' : 'Enable sound effects'}
+            onClick={() => setIsPreferencesOpen(true)}
+            className="h-7.5 w-7.5 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Chat preferences & appearance"
           >
-            {soundOn ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <VolumeX className="h-3.5 w-3.5 text-muted-foreground/60" />}
+            <Settings className="h-3.5 w-3.5" />
           </Button>
 
           {/* Keyboard Shortcuts */}
@@ -259,7 +321,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
             variant="outline"
             size="sm"
             onClick={() => setIsShortcutsOpen(true)}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+            className="h-7.5 w-7.5 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
             title="Keyboard shortcuts (?)"
           >
             <Keyboard className="h-3.5 w-3.5" />
@@ -270,7 +332,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 cursor-pointer"
+            className="h-7.5 w-7.5 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 cursor-pointer"
             title="Sign out"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -295,7 +357,11 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+
+      <ChatPreferencesModal
+        isOpen={isPreferencesOpen}
+        onClose={() => setIsPreferencesOpen(false)}
+      />
     </div>
   );
 }
-

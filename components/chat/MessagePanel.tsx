@@ -10,9 +10,11 @@ import { NewMessagesPill } from './NewMessagesPill';
 import { GroupInfoModal } from './GroupInfoModal';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
+import { useUIStore } from '@/lib/store/uiStore';
 import { playSendChime } from '@/lib/audio';
 import {
   ArrowLeft,
@@ -20,8 +22,11 @@ import {
   Info,
   RotateCw,
   Sparkles,
-  ShieldCheck,
+  Search,
+  X,
+  Calendar,
 } from 'lucide-react';
+import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 interface MessagePanelProps {
@@ -29,10 +34,19 @@ interface MessagePanelProps {
   onBack?: () => void;
 }
 
+function formatDateDivider(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'MMMM d, yyyy');
+}
+
 export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((s) => s.user?._id);
+  const sentSound = useUIStore((s) => s.sentSound);
 
   const {
     messages: storeMessagesMap,
@@ -48,6 +62,8 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const [showScrollPill, setShowScrollPill] = useState(false);
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
   const [hasScrolledInit, setHasScrolledInit] = useState(false);
+  const [isSearchingInChat, setIsSearchingInChat] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
 
   // Set active conversation in store
   useEffect(() => {
@@ -55,7 +71,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     return () => setActiveConversationId(null);
   }, [conversationId, setActiveConversationId]);
 
-  // Fetch Conversation metadata from query cache or list
+  // Fetch Conversation metadata
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['conversations', currentUserId],
     queryFn: conversationsApi.getConversations,
@@ -83,7 +99,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     }
   }, [historyData, conversationId, setMessagesForConversation]);
 
-  const messagesList = useMemo(() => {
+  const rawMessagesList = useMemo(() => {
     const raw = storeMessagesMap[conversationId] || [];
     return [...raw].sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime() || 0;
@@ -91,6 +107,15 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
       return timeA - timeB;
     });
   }, [storeMessagesMap, conversationId]);
+
+  // Filter messages if search is active
+  const messagesList = useMemo(() => {
+    if (!isSearchingInChat || !chatSearchQuery.trim()) {
+      return rawMessagesList;
+    }
+    const q = chatSearchQuery.toLowerCase().trim();
+    return rawMessagesList.filter((m) => m.text?.toLowerCase().includes(q));
+  }, [rawMessagesList, isSearchingInChat, chatSearchQuery]);
 
   // Smooth scroll to bottom
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
@@ -146,7 +171,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
       conversationsApi.sendMessage(conversationId, text),
     onSuccess: (serverMessage, variables) => {
       reconcileMessageSuccess(conversationId, variables.tempId, serverMessage);
-      queryClient.setQueryData<Conversation[]>(['conversations'], (old) => {
+      queryClient.setQueryData<Conversation[]>(['conversations', currentUserId], (old) => {
         if (!old) return old;
         return old.map((c) =>
           c._id === conversationId
@@ -175,7 +200,9 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const handleSendMessage = (text: string) => {
     if (!currentUserId) return;
     const tempId = addOptimisticMessage(conversationId, text, currentUserId);
-    playSendChime();
+    if (sentSound) {
+      playSendChime();
+    }
     scrollToBottom('smooth');
     sendMutation.mutate({ text, tempId });
   };
@@ -192,7 +219,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
 
   const headerSubtitle = isGroup
     ? `${(activeConversation?.participants || []).length} participants`
-    : activeConversation?.participant?.phone || 'Encrypted Direct Chat';
+    : activeConversation?.participant?.phone || 'Direct Chat';
 
   // Build participant lookup map for avatars and names in group chats
   const participantMap = useMemo(() => {
@@ -213,7 +240,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   return (
     <div className="relative flex h-full w-full flex-col bg-background/95 overflow-hidden">
       {/* Conversation Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-border/70 bg-card/80 backdrop-blur-md z-20 shrink-0">
+      <div className="flex h-16 items-center justify-between px-4 border-b border-border/70 bg-card/85 backdrop-blur-md z-20 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           {onBack && (
             <Button
@@ -241,17 +268,31 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             <div className="flex items-center gap-1.5">
               <h2 className="text-sm font-bold text-foreground truncate">{headerTitle}</h2>
               {isGroup && (
-                <span className="text-[10px] font-semibold bg-muted px-1.5 py-0.2 rounded-md text-muted-foreground">
+                <span className="text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.2 rounded-md">
                   Group
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">{headerSubtitle}</p>
+            <p className="text-[11px] text-muted-foreground truncate font-mono">{headerSubtitle}</p>
           </div>
         </div>
 
         {/* Header Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Search in chat button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsSearchingInChat(!isSearchingInChat);
+              if (isSearchingInChat) setChatSearchQuery('');
+            }}
+            className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-foreground"
+            title="Search in conversation"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+
           {isGroup && (
             <Button
               variant="outline"
@@ -265,6 +306,35 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
           )}
         </div>
       </div>
+
+      {/* In-Chat Search Bar */}
+      {isSearchingInChat && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted/40 border-b border-border/60 animate-in fade-in slide-in-from-top-1 duration-150">
+          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <Input
+            placeholder="Filter messages in this conversation..."
+            value={chatSearchQuery}
+            onChange={(e) => setChatSearchQuery(e.target.value)}
+            className="h-8 text-xs bg-background/80"
+            autoFocus
+          />
+          {chatSearchQuery && (
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap font-mono">
+              {messagesList.length} hit{messagesList.length === 1 ? '' : 's'}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSearchingInChat(false);
+              setChatSearchQuery('');
+            }}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Message List Body */}
       <div
@@ -321,7 +391,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
           </div>
         )}
 
-        {/* Messages with clustering */}
+        {/* Messages with clustering and Date Dividers */}
         {!isLoading &&
           !isError &&
           messagesList.map((msg, index) => {
@@ -329,14 +399,21 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             const prevMsg = messagesList[index - 1];
             const nextMsg = messagesList[index + 1];
 
+            // Check if day changed from prevMsg
+            const isNewDay =
+              !prevMsg ||
+              !isSameDay(new Date(prevMsg.createdAt), new Date(msg.createdAt));
+
             // Message clustering threshold: 2 minutes (120,000ms)
             const isSameSenderAsPrev =
               prevMsg &&
+              !isNewDay &&
               prevMsg.sender === msg.sender &&
               Math.abs(new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) < 120000;
 
             const isSameSenderAsNext =
               nextMsg &&
+              isSameDay(new Date(nextMsg.createdAt), new Date(msg.createdAt)) &&
               nextMsg.sender === msg.sender &&
               Math.abs(new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime()) < 120000;
 
@@ -346,16 +423,27 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             const senderParticipant = participantMap.get(msg.sender);
 
             return (
-              <MessageBubble
-                key={msg._id || msg.tempId || index}
-                message={msg}
-                isMe={isMe}
-                isGroup={Boolean(isGroup)}
-                isFirstInGroup={isFirstInGroup}
-                isLastInGroup={isLastInGroup}
-                senderParticipant={senderParticipant}
-                onRetry={handleRetryMessage}
-              />
+              <React.Fragment key={msg._id || msg.tempId || index}>
+                {/* Sticky / Centered Date Divider */}
+                {isNewDay && (
+                  <div className="flex items-center justify-center my-4 select-none">
+                    <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-3 py-1 text-[10.5px] font-semibold text-muted-foreground shadow-xs backdrop-blur-sm">
+                      <Calendar className="h-3 w-3 text-primary" />
+                      <span>{formatDateDivider(msg.createdAt)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <MessageBubble
+                  message={msg}
+                  isMe={isMe}
+                  isGroup={Boolean(isGroup)}
+                  isFirstInGroup={isFirstInGroup}
+                  isLastInGroup={isLastInGroup}
+                  senderParticipant={senderParticipant}
+                  onRetry={handleRetryMessage}
+                />
+              </React.Fragment>
             );
           })}
       </div>

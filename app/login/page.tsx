@@ -52,21 +52,10 @@ const TEST_PERSONAS: TestPersona[] = [
   },
 ];
 
-const COUNTRY_CODES = [
-  { code: '+1', country: 'US / CA' },
-  { code: '+880', country: 'BD' },
-  { code: '+44', country: 'UK' },
-  { code: '+49', country: 'DE' },
-  { code: '+91', country: 'IN' },
-  { code: '+61', country: 'AU' },
-  { code: '+33', country: 'FR' },
-];
-
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isLoading, error, clearError } = useAuthStore();
 
-  const [countryCode, setCountryCode] = useState('+1');
   const [phoneRaw, setPhoneRaw] = useState('');
   const [name, setName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -99,15 +88,11 @@ export default function LoginPage() {
     setFormError(null);
     clearError();
 
-    let fullPhone = phoneRaw.trim();
-    if (!fullPhone.startsWith('+')) {
-      fullPhone = `${countryCode}${fullPhone.replace(/^0+/, '')}`;
-    }
-
+    const fullPhone = phoneRaw.trim();
     const trimmedName = name.trim();
 
-    if (!fullPhone || fullPhone.length < 5) {
-      setFormError('Please enter a valid phone number with digits.');
+    if (!fullPhone || fullPhone.length < 3) {
+      setFormError('Please enter your phone number.');
       return;
     }
 
@@ -235,42 +220,28 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* Phone input with country code */}
+                {/* Phone input */}
                 <div className="space-y-1.5">
                   <label htmlFor="phone" className="block text-xs font-semibold text-foreground">
                     Phone Number
                   </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="h-10 rounded-xl border border-border/80 bg-background px-2.5 text-xs font-mono font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-                    >
-                      {COUNTRY_CODES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.country})
-                        </option>
-                      ))}
-                    </select>
-
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="555 123 4567 or +15551234567"
-                      value={phoneRaw}
-                      onChange={(e) => {
-                        setPhoneRaw(e.target.value);
-                        if (formError) setFormError(null);
-                      }}
-                      disabled={isLoading}
-                      required
-                      className="h-10 text-xs sm:text-sm font-mono flex-1"
-                      autoComplete="tel"
-                      autoFocus
-                    />
-                  </div>
+                  <Input
+                    id="phone"
+                    type="text"
+                    placeholder="e.g. +15551234567 or 01580845746"
+                    value={phoneRaw}
+                    onChange={(e) => {
+                      setPhoneRaw(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
+                    disabled={isLoading}
+                    required
+                    className="h-10 text-xs sm:text-sm font-mono w-full"
+                    autoComplete="tel"
+                    autoFocus
+                  />
                   <p className="text-[11px] text-muted-foreground">
-                    Used to lookup your existing profile or register a new user ID.
+                    Enter any phone format (e.g. <span className="font-mono text-foreground/80">+15551234567</span> or <span className="font-mono text-foreground/80">01580845746</span>).
                   </p>
                 </div>
 

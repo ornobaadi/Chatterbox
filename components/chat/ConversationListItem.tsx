@@ -40,8 +40,6 @@ export function ConversationListItem({
     ? (conversation.name || 'Group Chat')
     : (conversation.participant?.name || 'Direct Chat');
 
-  const subtitlePhone = !isGroup ? conversation.participant?.phone : null;
-
   const lastMsg = conversation.lastMessage;
   const timeFormatted = formatMessageTime(lastMsg?.createdAt || conversation.updatedAt || conversation.createdAt);
 
@@ -49,14 +47,20 @@ export function ConversationListItem({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        'group relative flex w-full items-center gap-3.5 rounded-2xl p-3 text-left transition-all duration-200 select-none cursor-pointer',
+        'group relative flex w-full items-center gap-3 rounded-2xl p-2.5 sm:p-3 text-left transition-all duration-150 select-none cursor-pointer overflow-hidden',
         isActive
-          ? 'bg-primary/10 text-foreground border border-primary/20 shadow-xs'
-          : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground border border-transparent'
+          ? 'bg-primary/10 text-foreground border border-primary/25 shadow-xs font-semibold'
+          : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent'
       )}
     >
+      {/* Active Left Indicator Bar */}
+      {isActive && (
+        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary" />
+      )}
+
       {/* Avatar */}
       <div className="relative shrink-0">
         <Avatar
@@ -75,28 +79,31 @@ export function ConversationListItem({
       {/* Details */}
       <div className="flex flex-1 min-w-0 flex-col justify-center">
         <div className="flex items-center justify-between gap-1.5">
-          <span className={cn(
-            'truncate text-sm font-semibold tracking-tight',
-            isActive ? 'text-foreground font-bold' : 'text-foreground/90'
-          )}>
-            {title}
-          </span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className={cn(
+              'truncate text-xs sm:text-sm font-semibold tracking-tight',
+              isActive ? 'text-foreground font-bold' : 'text-foreground/90'
+            )}>
+              {title}
+            </span>
+          </div>
+
           {timeFormatted && (
-            <span className="shrink-0 text-[11px] font-medium text-muted-foreground/70">
+            <span className="shrink-0 text-[10.5px] font-mono text-muted-foreground/70">
               {timeFormatted}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 mt-0.5">
+        <div className="flex items-center gap-1 mt-0.5">
           {isSentByMe && (
             <CheckCheck className="h-3.5 w-3.5 text-primary shrink-0" />
           )}
-          <p className="truncate text-xs text-muted-foreground/85">
+          <p className="truncate text-xs text-muted-foreground/80">
             {lastMsg?.text ? (
               <span>{lastMsg.text}</span>
             ) : (
-              <span className="italic opacity-60">No messages yet</span>
+              <span className="italic opacity-50">No messages yet</span>
             )}
           </p>
         </div>
