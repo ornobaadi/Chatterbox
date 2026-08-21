@@ -3,8 +3,8 @@
 Companion to PRD.md / architecture.md / design.md. Deadline: **Aug 22, 2026, 4:00 PM**. Use this to track progress across sessions/tools without re-explaining context each time — each phase should be completable and checkable independently.
 
 ## Phase 0 — Unblock (do first, ~30 min)
-- [ ] Get the real API spec (endpoints, request/response shapes, auth flow, real-time mechanism). Fill in `PRD.md §7`.
-- [ ] Confirm real-time transport → lock the branch in `architecture.md §2`.
+- [ ] Get the real API spec (endpoints, request/response shapes, auth flow, real-time mechanism). Fill in `PRD.md 7`.
+- [ ] Confirm real-time transport → lock the branch in `architecture.md 2`.
 - [ ] `npx create-next-app` (TS, App Router, Tailwind), push empty repo, confirm Vercel deploy works end-to-end *before* writing features — catches deploy issues early, not at 3:55 PM.
 
 ## Phase 1 — API documentation (standalone deliverable)
@@ -31,12 +31,12 @@ Companion to PRD.md / architecture.md / design.md. Deadline: **Aug 22, 2026, 4:0
 - [ ] Loading/empty/error states for the message panel specifically.
 
 ## Phase 5 — Bonus detail (Part 1)
-- [ ] Pick exactly one original addition (see PRD §5.8). Build it only after Phase 4 is solid — don't start this with unfinished core features.
+- [ ] Pick exactly one original addition (see PRD 5.8). Build it only after Phase 4 is solid — don't start this with unfinished core features.
 
 ## Phase 6 — Landing page (Part 2)
 - [ ] Direction/wireframe (mental or quick sketch) before code — avoid drifting into default-template layout.
 - [ ] Build hero + product showcase section.
-- [ ] One original interactive detail (see design.md §6).
+- [ ] One original interactive detail (see design.md 6).
 - [ ] Responsive pass.
 - [ ] Deploy (can be same Vercel project, separate route, or separate deploy — either is fine, just needs its own live link).
 

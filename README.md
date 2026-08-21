@@ -3,6 +3,11 @@
 > Frontend Developer Take-Home Assignment Deliverable.  
 > Built with Next.js 16 (App Router), React 19, TypeScript, TailwindCSS, Zustand, TanStack Query, and Socket.io.
 
+**Repository**: https://github.com/ornobaadi/Chatterbox
+**Live Demo**: https://chatterbox-space.vercel.app/
+
+![Chatterbox homepage](assets/home.webp)
+
 ---
 
 ## 1. Overview & Deliverables
@@ -69,6 +74,8 @@ During our pre-implementation API inspection, several nuances were discovered an
 2. **Direct Conversation Creation**: Requires payload `{ userId: string }`.
 3. **Socket Message Format**: The `message:new` socket payload provides `id` (instead of `_id`) and `createdAt` as a millisecond epoch number (rather than ISO string). The frontend normalizes both into a unified `Message` entity.
 4. **Group Admin Permissions**: Server enforces that only existing admins or group creators can add participants, promote members to admin, or rename groups.
+5. **Login with an existing phone, different name**: assumed the submitted `name` on each login call is used as-is (no merge/ignore logic against a previously stored name), since the endpoint doesn't document this behavior. Not exhaustively verified against the live server, flagging as an assumption rather than a confirmed fact.
+6. **Message history pagination**: `GET /conversations/{id}/messages` is called with no pagination parameters, the endpoint returns full history in one response. No pagination was implemented as a result, see "What I'd Improve" below.
 
 ---
 
@@ -87,7 +94,18 @@ In the spirit of transparency per the assignment guidelines:
 
 ---
 
-## 6. Running Locally
+## 6. What I'd Improve With More Time
+
+- **Pagination for message history**: the current implementation fetches full conversation history in one call. With more time I'd confirm the API's pagination support and add cursor-based loading for long conversations, so a chat with thousands of messages doesn't load everything up front.
+- **Automated tests**: the optimistic-send/reconcile/retry logic, auto-scroll threshold, and message-clustering window are exactly the kind of state logic that's easy to silently break during a refactor. A handful of focused tests around `chatStore.ts` and the scroll-detection logic in `MessagePanel.tsx` would be the highest-value addition.
+- **Reconnection message queue**: if the socket disconnects mid-session, outgoing sends still go through REST so they're not lost, but there's no queued replay for messages composed while fully offline. Worth handling explicitly rather than relying on the retry button alone.
+- **Accessibility pass**: keyboard navigation and ARIA labeling in the group management modal and emoji picker weren't a focus given the timeline, worth a dedicated pass.
+- **Landing page copy**: a couple of the performance stats on the landing page (sub-millisecond dispatch, etc.) are more illustrative than measured, I'd replace them with either real benchmarks or plainer, honest language.
+- **Typing indicators / read receipts**: the API doesn't expose these directly, a client-only simulated typing indicator (clearly labeled as such) would've been a reasonable bonus if time allowed.
+
+---
+
+## 7. Running Locally
 
 ```bash
 # 1. Clone repository

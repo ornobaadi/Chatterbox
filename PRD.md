@@ -114,7 +114,7 @@ Named request schemas to inspect in Swagger and formalize in your own docs: `Log
   - **server → client** `message:new` — a new message arrived for you
   - **server → client** `conversation:updated` — a group you're in changed (created, renamed, members/admins changed)
 
-Implication for `architecture.md`: real-time is settled — Socket.io branch, not polling. Note the `message:send` socket event as an *alternative* send path to `POST /messages`; decide in your write-up which one you actually use for sending (Swagger lists both a REST endpoint and a socket event for sending — using the socket event with an ack callback is arguably the tighter, more "real-time-native" choice, but REST + reconcile-via-`message:new` is simpler to reason about and matches the optimistic-send flow in architecture.md §5 more directly. Pick one, state why).
+Implication for `architecture.md`: real-time is settled — Socket.io branch, not polling. Note the `message:send` socket event as an *alternative* send path to `POST /messages`; decide in your write-up which one you actually use for sending (Swagger lists both a REST endpoint and a socket event for sending — using the socket event with an ack callback is arguably the tighter, more "real-time-native" choice, but REST + reconcile-via-`message:new` is simpler to reason about and matches the optimistic-send flow in architecture.md more directly. Pick one, state why).
 
 ### Groups model (confirmed)
 - A conversation is either **direct** (1:1) or a **group** (3+ members).
@@ -138,8 +138,8 @@ Implication for `architecture.md`: real-time is settled — Socket.io branch, no
 
 ## 9. Open questions / assumptions (update as answered)
 
-1. ~~Real-time mechanism~~ — **resolved: Socket.io**, see §7.
-2. Send via `POST /messages` vs. socket `message:send` — pick one, document the choice (see §7 note).
+1. ~~Real-time mechanism~~ — **resolved: Socket.io**, see 7.
+2. Send via `POST /messages` vs. socket `message:send` — pick one, document the choice (see 7 note).
 3. Pagination shape for message history — confirm against live response.
 4. What happens on login with an existing phone number but a different submitted name — server behavior unknown, confirm against live response.
 5. Group conversation minimum participant count is 3+ per the Swagger overview (direct = 1:1, group = 3+) — confirmed, not an open question anymore.

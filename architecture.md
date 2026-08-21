@@ -7,7 +7,7 @@ Companion to `PRD.md`. Read that first for *what*, this is *how*.
 - **Next.js (App Router) + TypeScript** — required by the assignment.
 - **TailwindCSS** — utility styling, fast to make it look intentional rather than default.
 - **Zustand** (or React Context if you want zero deps) — chat/session state. Zustand recommended: less boilerplate than Context for cross-component real-time updates (message list + conversation list both need to react to the same incoming-message event).
-- **TanStack Query** — server state (conversations, message history, search) — gives you loading/error states, caching, and refetch-on-focus for free, which directly covers PRD §5.6.
+- **TanStack Query** — server state (conversations, message history, search) — gives you loading/error states, caching, and refetch-on-focus for free, which directly covers PRD 5.6.
 - **Zod** — validate/parse API responses at the boundary, so a shape you didn't expect fails loudly in dev instead of silently breaking the UI.
 - Deploy target: **Vercel** (zero-config for Next.js).
 
@@ -28,7 +28,7 @@ Events:
 - **server → client** `message:new` — a new message arrived for you (append to store for the relevant conversation).
 - **server → client** `conversation:updated` — a group changed (created, renamed, membership/admins changed) — invalidate/refetch the conversation list or patch it in place.
 
-**Send path decision (state this explicitly in the Part 3 write-up):** the API exposes two ways to send — `POST /messages` (REST) and `message:send` (socket, with an optional ack). Recommended default: use `POST /messages` for the actual send (simpler error handling via normal HTTP status codes, plays cleanly with the optimistic-mutation flow in §5), and rely purely on `message:new` for receiving, including your own echoed-back message if the server sends it that way — check for and dedupe against the optimistic local copy by a client-generated temp id. Using `message:send`'s ack callback instead is a valid alternative (arguably more "real-time-native") if you'd rather avoid the dedupe step — pick one, don't implement both.
+**Send path decision (state this explicitly in the Part 3 write-up):** the API exposes two ways to send — `POST /messages` (REST) and `message:send` (socket, with an optional ack). Recommended default: use `POST /messages` for the actual send (simpler error handling via normal HTTP status codes, plays cleanly with the optimistic-mutation flow in 5), and rely purely on `message:new` for receiving, including your own echoed-back message if the server sends it that way — check for and dedupe against the optimistic local copy by a client-generated temp id. Using `message:send`'s ack callback instead is a valid alternative (arguably more "real-time-native") if you'd rather avoid the dedupe step — pick one, don't implement both.
 
 One socket connection, opened once after login (e.g., in a top-level provider or the chat layout), disposed on logout. `conversation:updated` and `message:new` dispatch into the same Zustand store `POST`-based mutations write to — the message list component doesn't need to know or care whether a given message arrived via the REST response or the socket event, both end in the same "append/reconcile message in store" action. Keep that boundary clean.
 
