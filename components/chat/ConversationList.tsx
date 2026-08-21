@@ -8,10 +8,9 @@ import { ConversationListItem } from './ConversationListItem';
 import { SearchStartConversation } from './SearchStartConversation';
 import { GroupCreateModal } from './GroupCreateModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
-import { Avatar } from '@/components/ui/avatar';
+import { ChatPreferencesModal } from './ChatPreferencesModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
@@ -21,14 +20,14 @@ import {
   Users,
   Search,
   LogOut,
-  Wifi,
   WifiOff,
   RotateCw,
   Sparkles,
-  Volume2,
-  VolumeX,
   Keyboard,
+  Settings,
+  X,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -37,16 +36,37 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
 }
 
+type TabFilter = 'all' | 'direct' | 'group';
+
+// Deterministic pastel hue from name
+function avatarHue(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
+}
+
+function nameInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 export function ConversationList({ activeId, onSelect }: ConversationListProps) {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const socketConnected = useChatStore((s) => s.socketConnected);
 
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [filterQuery, setFilterQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
 
   const {
     data: conversations = [],
@@ -65,110 +85,162 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
     router.push('/login');
   };
 
-  const toggleSound = () => {
-    const next = !soundOn;
-    setSoundOn(next);
-    setSoundEnabled(next);
-    toast.info(next ? 'Sound notifications enabled' : 'Sound notifications muted', { duration: 1500 });
-  };
-
   const filteredConversations = conversations.filter((conv) => {
+    if (activeTab === 'direct' && conv.type !== 'direct') return false;
+    if (activeTab === 'group' && conv.type !== 'group') return false;
     if (!filterQuery.trim()) return true;
     const q = filterQuery.toLowerCase();
-    if (conv.type === 'group') {
-      return conv.name?.toLowerCase().includes(q);
-    }
-    const participantName = conv.participant?.name?.toLowerCase() || '';
-    const participantPhone = conv.participant?.phone?.toLowerCase() || '';
-    return participantName.includes(q) || participantPhone.includes(q);
+    if (conv.type === 'group') return conv.name?.toLowerCase().includes(q);
+    return (
+      conv.participant?.name?.toLowerCase().includes(q) ||
+      conv.participant?.phone?.toLowerCase().includes(q)
+    );
   });
 
+  const directCount = conversations.filter((c) => c.type === 'direct').length;
+  const groupCount = conversations.filter((c) => c.type === 'group').length;
+
+  const userName = user?.name || 'Me';
+  const userHue = avatarHue(userName);
+  const userInitials = nameInitials(userName);
+
+  const tabs: { key: TabFilter; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: conversations.length },
+    { key: 'direct', label: 'DMs', count: directCount },
+    { key: 'group', label: 'Groups', count: groupCount },
+  ];
+
   return (
-    <div className="flex h-full w-full flex-col bg-card/60 backdrop-blur-md border-r border-border/80 select-none">
-      {/* Header */}
-      <div className="p-4 pb-3 border-b border-border/50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight text-foreground font-heading">
+    <div className="flex h-full w-full flex-col bg-sidebar border-r border-border/60 select-none">
+
+      {/* ── Header ── */}
+      <div className="px-3.5 pt-4 pb-2.5 space-y-3">
+        {/* Top row: title + live badge + actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
               Messages
             </h2>
-            {/* Live Socket Status indicator */}
-            <div
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+            {/* Live / offline badge */}
+            <span
+              className={cn(
+                'flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium font-mono border',
                 socketConnected
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-              }`}
-              title={socketConnected ? 'Real-time WebSocket Live' : 'Connecting to WebSocket...'}
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25'
+              )}
+              title={socketConnected ? 'Connected to real-time server' : 'Reconnecting…'}
             >
               {socketConnected ? (
-                <>
-                  <Wifi className="h-2.5 w-2.5" />
-                  <span>Live</span>
-                </>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               ) : (
-                <>
-                  <WifiOff className="h-2.5 w-2.5" />
-                  <span>Syncing</span>
-                </>
+                <WifiOff className="h-3 w-3" />
               )}
-            </div>
+              <span>{socketConnected ? 'Live' : 'Syncing'}</span>
+            </span>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-1.5">
+          {/* Action icons */}
+          <div className="flex items-center gap-1">
             <ThemeToggle />
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setIsSearchModalOpen(true)}
-              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 cursor-pointer"
-              title="New direct message"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="New message"
             >
               <MessageSquarePlus className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => setIsGroupModalOpen(true)}
-              className="h-8 w-8 p-0 rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 cursor-pointer"
-              title="New group conversation"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="New group"
             >
               <Users className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
 
-        {/* Filter / Search input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
-          <Input
-            placeholder="Filter chats..."
+        {/* Search bar */}
+        <div
+          className={cn(
+            'flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2 transition-all',
+            isSearchFocused
+              ? 'border-primary/50 bg-background ring-2 ring-primary/15'
+              : 'border-border/60'
+          )}
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+          <input
+            type="text"
+            placeholder="Search Chatterbox…"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="pl-8.5 h-9 text-xs rounded-xl bg-background/50"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
           />
+          {filterQuery && (
+            <button
+              type="button"
+              onClick={() => setFilterQuery('')}
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Tab pills */}
+        <div className="flex items-center gap-1.5">
+          {tabs.map(({ key, label, count }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer',
+                activeTab === key
+                  ? 'bg-background text-foreground shadow-xs border border-border/70 font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+            >
+              <span>{label}</span>
+              <span
+                className={cn(
+                  'font-mono text-xs tabular-nums',
+                  activeTab === key ? 'text-muted-foreground font-normal' : 'opacity-60'
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Conversation List Body */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+      {/* ── List Body ── */}
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
+
+        {/* Loading skeletons */}
         {isLoading && (
-          <div className="space-y-2 p-1">
+          <div className="space-y-1 pt-1">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20">
-                <Skeleton className="h-10 w-10 rounded-full" />
+              <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
                 <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-3/4 rounded-md" />
-                  <Skeleton className="h-3 w-1/2 rounded-md" />
+                  <Skeleton className="h-3 w-3/4 rounded-md" />
+                  <Skeleton className="h-2.5 w-1/2 rounded-md" />
                 </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Error */}
         {isError && (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground gap-3">
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground gap-3">
             <p className="text-xs">Failed to load conversations</p>
             <Button
               variant="outline"
@@ -177,30 +249,31 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
               className="h-8 text-xs gap-1.5 rounded-lg cursor-pointer"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              <span>Retry</span>
+              Retry
             </Button>
           </div>
         )}
 
+        {/* Empty state */}
         {!isLoading && !isError && conversations.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-3">
+          <div className="flex flex-col items-center justify-center py-14 px-4 text-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">No conversations yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Start a 1:1 chat or create a group to begin messaging.
+              <p className="text-sm font-semibold text-foreground">No conversations</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Start a chat or create a group to begin.
               </p>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2">
               <Button
                 size="sm"
                 onClick={() => setIsSearchModalOpen(true)}
                 className="h-8 text-xs rounded-xl gap-1.5 cursor-pointer"
               >
                 <MessageSquarePlus className="h-3.5 w-3.5" />
-                <span>New Chat</span>
+                New Chat
               </Button>
               <Button
                 variant="outline"
@@ -209,12 +282,13 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
                 className="h-8 text-xs rounded-xl gap-1.5 cursor-pointer"
               >
                 <Users className="h-3.5 w-3.5" />
-                <span>New Group</span>
+                New Group
               </Button>
             </div>
           </div>
         )}
 
+        {/* List */}
         {!isLoading && !isError && filteredConversations.map((conv) => (
           <ConversationListItem
             key={conv._id}
@@ -225,56 +299,56 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
           />
         ))}
 
+        {/* No filter match */}
         {!isLoading && conversations.length > 0 && filteredConversations.length === 0 && (
-          <div className="p-6 text-center text-xs text-muted-foreground">
-            No chats match &ldquo;{filterQuery}&rdquo;
-          </div>
+          <p className="px-4 pt-6 text-center text-xs text-muted-foreground">
+            No results for &ldquo;{filterQuery}&rdquo;
+          </p>
         )}
       </div>
 
-      {/* User Profile Footer */}
-      <div className="p-3 border-t border-border/50 bg-muted/20 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Avatar name={user?.name || 'Me'} size="sm" />
+      {/* ── User Footer ── */}
+      <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-3.5 py-2.5">
+        {/* User avatar + info */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-xs"
+            style={{ background: `hsl(${userHue}, 52%, 42%)` }}
+          >
+            {userInitials}
+          </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">{user?.name}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{user?.phone}</p>
+            <p className="truncate text-sm font-semibold text-foreground">{user?.name}</p>
+            <p className="truncate font-mono text-xs text-muted-foreground">{user?.phone}</p>
           </div>
         </div>
 
+        {/* Footer actions */}
         <div className="flex items-center gap-1">
-          {/* Sound Toggle */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleSound}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            title={soundOn ? 'Mute sound effects' : 'Enable sound effects'}
+          <button
+            type="button"
+            onClick={() => setIsPreferencesOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            title="Preferences"
           >
-            {soundOn ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <VolumeX className="h-3.5 w-3.5 text-muted-foreground/60" />}
-          </Button>
-
-          {/* Keyboard Shortcuts */}
-          <Button
-            variant="outline"
-            size="sm"
+            <Settings className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => setIsShortcutsOpen(true)}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            title="Keyboard shortcuts (?)"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            title="Keyboard shortcuts"
           >
-            <Keyboard className="h-3.5 w-3.5" />
-          </Button>
-
-          {/* Sign Out */}
-          <Button
-            variant="outline"
-            size="sm"
+            <Keyboard className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={handleLogout}
-            className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
             title="Sign out"
           >
-            <LogOut className="h-3.5 w-3.5" />
-          </Button>
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -284,18 +358,19 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
         onClose={() => setIsSearchModalOpen(false)}
         onSelectConversation={(id) => onSelect(id)}
       />
-
       <GroupCreateModal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
         onSelectConversation={(id) => onSelect(id)}
       />
-
       <KeyboardShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+      <ChatPreferencesModal
+        isOpen={isPreferencesOpen}
+        onClose={() => setIsPreferencesOpen(false)}
+      />
     </div>
   );
 }
-

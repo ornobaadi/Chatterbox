@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useUIStore } from '@/lib/store/uiStore';
+import { EmojiPicker } from './EmojiPicker';
 import { SendHorizonal, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,43 +18,104 @@ export function MessageComposer({
   placeholder = 'Type a message...',
 }: MessageComposerProps) {
   const [text, setText] = useState('');
+  const [showEmoji, setShowEmoji] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiTriggerRef = useRef<HTMLDivElement>(null);
+  const { accentColor } = useUIStore();
 
   const canSend = text.trim().length > 0 && !disabled;
 
-  // Auto-grow textarea height
+  // Auto-grow textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 148)}px`;
     }
   }, [text]);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!canSend) return;
+  // Close emoji on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (emojiTriggerRef.current && !emojiTriggerRef.current.contains(e.target as Node)) {
+        setShowEmoji(false);
+      }
+    };
+    if (showEmoji) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showEmoji]);
 
-    const messageToSend = text.trim();
+  const submit = () => {
+    if (!canSend) return;
+    const msg = text.trim();
     setText('');
+    setShowEmoji(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    onSend(messageToSend);
+    onSend(msg);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      submit();
     }
   };
 
+  const handleSelectEmoji = (emoji: string) => {
+    setText((prev) => prev + emoji);
+    textareaRef.current?.focus();
+  };
+
+  const sendBtnColors: Record<string, string> = {
+    blue: 'bg-blue-600 hover:bg-blue-500',
+    emerald: 'bg-emerald-600 hover:bg-emerald-500',
+    purple: 'bg-violet-600 hover:bg-violet-500',
+    coral: 'bg-orange-600 hover:bg-orange-500',
+    monochrome: 'bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600',
+  };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="relative flex flex-col p-3.5 bg-card/80 border-t border-border/70 backdrop-blur-md"
-    >
-      <div className="flex items-end gap-2.5 rounded-2xl border border-border/80 bg-background/60 p-1.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-xs">
+    <div className="shrink-0 border-t border-border/60 bg-background/90 px-3 py-2.5 sm:px-4 relative">
+      {/* Composer Container */}
+      <div
+        className={cn(
+          'flex items-end gap-2 rounded-2xl border bg-card px-2.5 py-1.5 transition-all',
+          'focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15',
+          disabled ? 'opacity-60 pointer-events-none' : 'border-border/70'
+        )}
+      >
+        {/* Emoji trigger & popover */}
+        <div className="relative shrink-0" ref={emojiTriggerRef}>
+          <button
+            type="button"
+            onClick={() => setShowEmoji((v) => !v)}
+            disabled={disabled}
+            className={cn(
+              'mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground',
+              'hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer',
+              showEmoji && 'text-primary bg-primary/10'
+            )}
+            title="Add emoji"
+          >
+            <Smile className="h-5 w-5" />
+          </button>
+
+          {/* Render EmojiPicker anchored above the button */}
+          {showEmoji && (
+            <div className="absolute bottom-12 left-0 z-50">
+              <EmojiPicker
+                onSelect={handleSelectEmoji}
+                onClose={() => setShowEmoji(false)}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Textarea */}
         <textarea
           ref={textareaRef}
@@ -62,31 +125,34 @@ export function MessageComposer({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 max-h-[140px] min-h-[38px] resize-none bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(
+            'flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed text-foreground',
+            'placeholder:text-muted-foreground/60 focus:outline-none disabled:cursor-not-allowed',
+            'max-h-[148px] scrollbar-none'
+          )}
         />
 
-        {/* Send Button */}
+        {/* Send button */}
         <button
-          type="submit"
+          type="button"
+          onClick={submit}
           disabled={!canSend}
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-150',
+            'mb-0.5 flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-white transition-all cursor-pointer',
             canSend
-              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:scale-105 active:scale-95 cursor-pointer'
-              : 'bg-muted/70 text-muted-foreground/40 cursor-not-allowed border border-border/40'
+              ? cn('shadow-sm active:scale-95', sendBtnColors[accentColor] || sendBtnColors.blue)
+              : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
           )}
-          title={canSend ? 'Send message (Enter)' : 'Type a message to send'}
+          title="Send (Enter)"
         >
           <SendHorizonal className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Keyboard Shortcut Hint */}
-      <div className="flex items-center justify-between px-2 pt-1.5 text-[10.5px] text-muted-foreground/65 select-none">
-        <span>
-          <kbd className="font-mono rounded border border-border px-1 py-0.2 bg-muted/40 text-[10px]">Enter</kbd> to send, <kbd className="font-mono rounded border border-border px-1 py-0.2 bg-muted/40 text-[10px]">Shift + Enter</kbd> for new line
-        </span>
-      </div>
-    </form>
+      {/* Shortcut hint */}
+      <p className="mt-1.5 text-center text-[11px] text-muted-foreground/60 select-none">
+        <kbd className="font-mono text-[10px] bg-muted/60 px-1 py-0.5 rounded border border-border/50">Enter</kbd> to send · <kbd className="font-mono text-[10px] bg-muted/60 px-1 py-0.5 rounded border border-border/50">Shift+Enter</kbd> for new line
+      </p>
+    </div>
   );
 }

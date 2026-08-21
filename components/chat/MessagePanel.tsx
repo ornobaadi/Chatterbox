@@ -10,18 +10,24 @@ import { NewMessagesPill } from './NewMessagesPill';
 import { GroupInfoModal } from './GroupInfoModal';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useChatStore } from '@/lib/store/chatStore';
+import { useUIStore } from '@/lib/store/uiStore';
 import { playSendChime } from '@/lib/audio';
+import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
-  Users,
   Info,
   RotateCw,
   Sparkles,
-  ShieldCheck,
+  Search,
+  X,
+  Calendar,
+  MessageCircle,
 } from 'lucide-react';
+import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 interface MessagePanelProps {
@@ -29,10 +35,19 @@ interface MessagePanelProps {
   onBack?: () => void;
 }
 
+function formatDateDivider(dateString: string): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'MMMM d, yyyy');
+}
+
 export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((s) => s.user?._id);
+  const sentSound = useUIStore((s) => s.sentSound);
 
   const {
     messages: storeMessagesMap,
@@ -48,6 +63,8 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const [showScrollPill, setShowScrollPill] = useState(false);
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
   const [hasScrolledInit, setHasScrolledInit] = useState(false);
+  const [isSearchingInChat, setIsSearchingInChat] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
 
   // Set active conversation in store
   useEffect(() => {
@@ -55,7 +72,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     return () => setActiveConversationId(null);
   }, [conversationId, setActiveConversationId]);
 
-  // Fetch Conversation metadata from query cache or list
+  // Fetch Conversation metadata
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['conversations', currentUserId],
     queryFn: conversationsApi.getConversations,
@@ -83,7 +100,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     }
   }, [historyData, conversationId, setMessagesForConversation]);
 
-  const messagesList = useMemo(() => {
+  const rawMessagesList = useMemo(() => {
     const raw = storeMessagesMap[conversationId] || [];
     return [...raw].sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime() || 0;
@@ -91,6 +108,15 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
       return timeA - timeB;
     });
   }, [storeMessagesMap, conversationId]);
+
+  // Filter messages if search is active
+  const messagesList = useMemo(() => {
+    if (!isSearchingInChat || !chatSearchQuery.trim()) {
+      return rawMessagesList;
+    }
+    const q = chatSearchQuery.toLowerCase().trim();
+    return rawMessagesList.filter((m) => m.text?.toLowerCase().includes(q));
+  }, [rawMessagesList, isSearchingInChat, chatSearchQuery]);
 
   // Smooth scroll to bottom
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
@@ -146,7 +172,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
       conversationsApi.sendMessage(conversationId, text),
     onSuccess: (serverMessage, variables) => {
       reconcileMessageSuccess(conversationId, variables.tempId, serverMessage);
-      queryClient.setQueryData<Conversation[]>(['conversations'], (old) => {
+      queryClient.setQueryData<Conversation[]>(['conversations', currentUserId], (old) => {
         if (!old) return old;
         return old.map((c) =>
           c._id === conversationId
@@ -175,7 +201,9 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const handleSendMessage = (text: string) => {
     if (!currentUserId) return;
     const tempId = addOptimisticMessage(conversationId, text, currentUserId);
-    playSendChime();
+    if (sentSound) {
+      playSendChime();
+    }
     scrollToBottom('smooth');
     sendMutation.mutate({ text, tempId });
   };
@@ -192,7 +220,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
 
   const headerSubtitle = isGroup
     ? `${(activeConversation?.participants || []).length} participants`
-    : activeConversation?.participant?.phone || 'Encrypted Direct Chat';
+    : activeConversation?.participant?.phone || 'Direct Chat';
 
   // Build participant lookup map for avatars and names in group chats
   const participantMap = useMemo(() => {
@@ -210,118 +238,167 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     return map;
   }, [activeConversation]);
 
+  // Dynamic Browser Tab Title
+  useEffect(() => {
+    if (headerTitle) {
+      document.title = `${headerTitle} | Chatterbox`;
+    }
+    return () => {
+      document.title = 'Messages | Chatterbox';
+    };
+  }, [headerTitle]);
+
   return (
-    <div className="relative flex h-full w-full flex-col bg-background/95 overflow-hidden">
-      {/* Conversation Header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-border/70 bg-card/80 backdrop-blur-md z-20 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          {onBack && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBack}
-              className="h-8 w-8 p-0 rounded-xl md:hidden shrink-0"
+    <div className="relative flex h-full w-full flex-col bg-background overflow-hidden">
+
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-20 shrink-0">
+        <div className="flex h-16 items-center justify-between gap-3 border-b border-border/60 bg-background/85 backdrop-blur-md px-4">
+          {/* Left: back + avatar + name */}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors md:hidden cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-3 text-left cursor-default"
+              onClick={() => isGroup && setIsGroupInfoOpen(true)}
+              disabled={!isGroup}
             >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
+              <Avatar
+                name={headerTitle}
+                size="md"
+                isGroup={isGroup}
+                className="shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate text-sm sm:text-base font-semibold text-foreground">
+                    {headerTitle}
+                  </h2>
+                  {isGroup && (
+                    <span className="shrink-0 rounded-md border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      Group
+                    </span>
+                  )}
+                </div>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  {headerSubtitle}
+                </p>
+              </div>
+            </button>
+          </div>
 
-          <Avatar
-            name={headerTitle}
-            size="md"
-            isGroup={isGroup}
-            className="shrink-0 cursor-pointer"
-            onClick={() => isGroup && setIsGroupInfoOpen(true)}
-          />
-
-          <div
-            className="min-w-0 cursor-pointer"
-            onClick={() => isGroup && setIsGroupInfoOpen(true)}
-          >
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-bold text-foreground truncate">{headerTitle}</h2>
-              {isGroup && (
-                <span className="text-[10px] font-semibold bg-muted px-1.5 py-0.2 rounded-md text-muted-foreground">
-                  Group
-                </span>
+          {/* Right: actions */}
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchingInChat(!isSearchingInChat);
+                if (isSearchingInChat) setChatSearchQuery('');
+              }}
+              className={cn(
+                'flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-colors cursor-pointer',
+                isSearchingInChat
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
-            </div>
-            <p className="text-xs text-muted-foreground truncate">{headerSubtitle}</p>
+              title="Search in conversation"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
+            {isGroup && (
+              <button
+                type="button"
+                onClick={() => setIsGroupInfoOpen(true)}
+                className="flex h-8.5 w-8.5 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                title="Group details"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Header Actions */}
-        <div className="flex items-center gap-2">
-          {isGroup && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsGroupInfoOpen(true)}
-              className="h-8 rounded-xl text-xs gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+        {/* Inline search reveal */}
+        {isSearchingInChat && (
+          <div className="flex items-center gap-2.5 border-b border-border/50 bg-muted/40 px-4 py-2 animate-in fade-in slide-in-from-top-1 duration-150">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+            <Input
+              placeholder="Filter messages…"
+              value={chatSearchQuery}
+              onChange={(e) => setChatSearchQuery(e.target.value)}
+              className="h-8 flex-1 border-none bg-transparent text-sm shadow-none focus-visible:ring-0 p-0"
+              autoFocus
+            />
+            {chatSearchQuery && (
+              <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                {messagesList.length} match{messagesList.length !== 1 ? 'es' : ''}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => { setIsSearchingInChat(false); setChatSearchQuery(''); }}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
             >
-              <Info className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Details</span>
-            </Button>
-          )}
-        </div>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Message List Body */}
+      {/* ── Message List ── */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-1 relative"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-0 relative"
       >
-        {/* Loading State with shaped bubble skeletons */}
+        {/* Loading: shaped bubble skeletons */}
         {isLoading && (
-          <div className="space-y-4 py-4 max-w-xl mx-auto">
-            <div className="flex justify-start">
-              <Skeleton className="h-14 w-48 rounded-2xl rounded-tl-sm bg-muted/60" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-12 w-64 rounded-2xl rounded-tr-sm bg-primary/20" />
-            </div>
-            <div className="flex justify-start">
-              <Skeleton className="h-16 w-56 rounded-2xl rounded-tl-sm bg-muted/60" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-10 w-40 rounded-2xl rounded-tr-sm bg-primary/20" />
-            </div>
+          <div className="space-y-4 py-6 max-w-lg mx-auto">
+            {[{w:'w-44',side:'start'},{w:'w-60',side:'end'},{w:'w-52',side:'start'},{w:'w-36',side:'end'}].map((s,i)=>(
+              <div key={i} className={`flex justify-${s.side}`}>
+                <Skeleton className={`h-10 ${s.w} rounded-2xl ${s.side==='end' ? 'bg-primary/15' : 'bg-muted/60'}`} />
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Error State */}
+        {/* Error */}
         {isError && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-12">
-            <p className="text-sm">Could not load message history</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="h-8.5 text-xs gap-1.5 rounded-xl"
-            >
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-12 text-center text-muted-foreground">
+            <p className="text-sm">Could not load messages</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 text-xs gap-1.5 rounded-xl">
               <RotateCw className="h-3.5 w-3.5" />
-              <span>Retry</span>
+              Retry
             </Button>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty state */}
         {!isLoading && !isError && messagesList.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3 py-16">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-inner">
-              <Sparkles className="h-7 w-7" />
+          <div className="flex h-full flex-col items-center justify-center gap-3 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+              <MessageCircle className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-base font-bold text-foreground">No messages here yet</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Break the ice! Send a message below to start the conversation.
+              <p className="text-sm font-semibold text-foreground">No messages yet</p>
+              <p className="mt-1 max-w-[22ch] text-xs text-muted-foreground">
+                Say hello! Your conversation starts here.
               </p>
             </div>
           </div>
         )}
 
-        {/* Messages with clustering */}
+        {/* Messages with clustering and Date Dividers */}
         {!isLoading &&
           !isError &&
           messagesList.map((msg, index) => {
@@ -329,14 +406,21 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             const prevMsg = messagesList[index - 1];
             const nextMsg = messagesList[index + 1];
 
+            // Check if day changed from prevMsg
+            const isNewDay =
+              !prevMsg ||
+              !isSameDay(new Date(prevMsg.createdAt), new Date(msg.createdAt));
+
             // Message clustering threshold: 2 minutes (120,000ms)
             const isSameSenderAsPrev =
               prevMsg &&
+              !isNewDay &&
               prevMsg.sender === msg.sender &&
               Math.abs(new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime()) < 120000;
 
             const isSameSenderAsNext =
               nextMsg &&
+              isSameDay(new Date(nextMsg.createdAt), new Date(msg.createdAt)) &&
               nextMsg.sender === msg.sender &&
               Math.abs(new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime()) < 120000;
 
@@ -346,16 +430,27 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             const senderParticipant = participantMap.get(msg.sender);
 
             return (
-              <MessageBubble
-                key={msg._id || msg.tempId || index}
-                message={msg}
-                isMe={isMe}
-                isGroup={Boolean(isGroup)}
-                isFirstInGroup={isFirstInGroup}
-                isLastInGroup={isLastInGroup}
-                senderParticipant={senderParticipant}
-                onRetry={handleRetryMessage}
-              />
+              <React.Fragment key={msg._id || msg.tempId || index}>
+                {/* Sticky / Centered Date Divider */}
+                {isNewDay && (
+                  <div className="flex items-center justify-center my-4 select-none">
+                    <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-3 py-1 text-[10.5px] font-semibold text-muted-foreground shadow-xs backdrop-blur-sm">
+                      <Calendar className="h-3 w-3 text-primary" />
+                      <span>{formatDateDivider(msg.createdAt)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <MessageBubble
+                  message={msg}
+                  isMe={isMe}
+                  isGroup={Boolean(isGroup)}
+                  isFirstInGroup={isFirstInGroup}
+                  isLastInGroup={isLastInGroup}
+                  senderParticipant={senderParticipant}
+                  onRetry={handleRetryMessage}
+                />
+              </React.Fragment>
             );
           })}
       </div>
