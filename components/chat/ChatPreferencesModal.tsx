@@ -3,6 +3,7 @@
 import React from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useUIStore, AccentColor, ChatDensity, FontSize, TimestampFormat } from '@/lib/store/uiStore';
 import {
   Palette,
@@ -22,12 +23,12 @@ interface ChatPreferencesModalProps {
   onClose: () => void;
 }
 
-const ACCENT_COLORS: { id: AccentColor; name: string; bgClass: string; ringColor: string }[] = [
-  { id: 'blue', name: 'Sapphire', bgClass: 'bg-blue-600', ringColor: 'ring-blue-500' },
-  { id: 'emerald', name: 'Emerald', bgClass: 'bg-emerald-600', ringColor: 'ring-emerald-500' },
-  { id: 'purple', name: 'Violet', bgClass: 'bg-purple-600', ringColor: 'ring-purple-500' },
-  { id: 'coral', name: 'Coral', bgClass: 'bg-orange-600', ringColor: 'ring-orange-500' },
-  { id: 'monochrome', name: 'Slate', bgClass: 'bg-slate-700', ringColor: 'ring-slate-500' },
+const ACCENT_COLORS: { id: AccentColor; name: string; bgClass: string }[] = [
+  { id: 'blue', name: 'Sapphire', bgClass: 'bg-blue-600' },
+  { id: 'emerald', name: 'Emerald', bgClass: 'bg-emerald-600' },
+  { id: 'purple', name: 'Violet', bgClass: 'bg-purple-600' },
+  { id: 'coral', name: 'Coral', bgClass: 'bg-orange-600' },
+  { id: 'monochrome', name: 'Slate', bgClass: 'bg-slate-700' },
 ];
 
 export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalProps) {
@@ -45,6 +46,17 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
     setIncomingSound,
     setSentSound,
   } = useUIStore();
+
+  const sentBgMap: Record<AccentColor, string> = {
+    blue: 'bg-blue-600 text-white',
+    emerald: 'bg-emerald-600 text-white',
+    purple: 'bg-violet-600 text-white',
+    coral: 'bg-orange-600 text-white',
+    monochrome: 'bg-zinc-800 text-white dark:bg-zinc-700',
+  };
+
+  const previewTimeReceived = timestampFormat === 'absolute' ? '10:41 AM' : '2m ago';
+  const previewTimeSent = timestampFormat === 'absolute' ? '10:42 AM · Sent' : 'Just now · Sent';
 
   return (
     <Modal
@@ -151,12 +163,12 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
             </div>
           </div>
 
-          {/* Timestamp Format */}
+          {/* Timestamp Hover Tooltip Format */}
           <div className="p-3 rounded-xl border border-border/70 bg-card/40 space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="font-bold text-foreground text-xs flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-primary" />
-                <span>Timestamp Format</span>
+                <span>Hover Timestamp Format</span>
               </label>
             </div>
             <div className="grid grid-cols-2 gap-1 bg-muted/60 p-1 rounded-lg border border-border/50">
@@ -235,49 +247,48 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
           </div>
         </div>
 
-        {/* 3. COMPACT LIVE PREVIEW */}
+        {/* 3. LIVE PREVIEW WITH HOVER TIMESTAMPS */}
         <div className="space-y-1.5">
-          <label className="font-bold text-muted-foreground uppercase tracking-wider text-[10.5px] flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>Live Preview</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="font-bold text-muted-foreground uppercase tracking-wider text-[10.5px] flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>Live Preview</span>
+            </label>
+            <span className="text-[10px] text-muted-foreground/70 italic">
+              Hover over bubbles to view timestamps
+            </span>
+          </div>
 
-          <div className="p-3.5 rounded-xl border border-border/80 bg-background/60 shadow-xs space-y-2">
-            {/* Received message */}
+          <div className="p-4 rounded-xl border border-border/80 bg-background/60 shadow-xs space-y-2.5">
+            {/* Received message with tooltip */}
             <div className="flex justify-start">
-              <div
-                className={cn(
-                  'rounded-2xl rounded-tl-xs bg-card border border-border/80 text-foreground shadow-xs leading-relaxed max-w-[75%]',
-                  density === 'compact' ? 'py-1 px-3' : 'py-1.5 px-3.5',
-                  fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
-                )}
-              >
-                <p>Testing real-time message stream appearance.</p>
-                <span className="text-[9.5px] text-muted-foreground mt-0.5 block">
-                  {timestampFormat === 'absolute' ? '10:41 AM' : '2m ago'}
-                </span>
-              </div>
+              <Tooltip content={<span>{previewTimeReceived}</span>} side="right">
+                <div
+                  className={cn(
+                    'rounded-2xl rounded-bl-xs bg-muted/70 dark:bg-muted/40 border border-border/50 text-foreground shadow-xs leading-relaxed max-w-[80%] cursor-default',
+                    density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
+                    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
+                  )}
+                >
+                  <p>Testing real-time message stream appearance.</p>
+                </div>
+              </Tooltip>
             </div>
 
-            {/* Sent message */}
+            {/* Sent message with tooltip */}
             <div className="flex justify-end">
-              <div
-                className={cn(
-                  'rounded-2xl rounded-tr-xs text-white shadow-xs leading-relaxed max-w-[75%]',
-                  accentColor === 'blue' && 'bg-blue-600',
-                  accentColor === 'emerald' && 'bg-emerald-600',
-                  accentColor === 'purple' && 'bg-purple-600',
-                  accentColor === 'coral' && 'bg-orange-600',
-                  accentColor === 'monochrome' && 'bg-slate-700',
-                  density === 'compact' ? 'py-1 px-3' : 'py-1.5 px-3.5',
-                  fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
-                )}
-              >
-                <p>Optimistic dispatch sends in &lt; 1ms!</p>
-                <span className="text-[9.5px] opacity-80 mt-0.5 block text-right font-mono">
-                  {timestampFormat === 'absolute' ? '10:42 AM' : 'Just now'} • ✓✓
-                </span>
-              </div>
+              <Tooltip content={<span>{previewTimeSent}</span>} side="left">
+                <div
+                  className={cn(
+                    'rounded-2xl rounded-br-xs shadow-xs leading-relaxed max-w-[80%] cursor-default',
+                    sentBgMap[accentColor] || sentBgMap.blue,
+                    density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
+                    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
+                  )}
+                >
+                  <p>Optimistic dispatch sends in &lt; 1ms!</p>
+                </div>
+              </Tooltip>
             </div>
           </div>
         </div>
