@@ -25,7 +25,7 @@ export default function ChatLayout({
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
           <p className="text-xs font-semibold text-muted-foreground tracking-wide">
@@ -41,12 +41,12 @@ export default function ChatLayout({
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-background">
       {/* Sidebar: hidden on mobile if active conversation selected */}
       <div
         className={cn(
-          'h-full w-full md:w-80 lg:w-96 shrink-0 transition-all duration-200',
-          conversationId ? 'hidden md:block' : 'block'
+          'h-full w-full md:w-80 lg:w-96 shrink-0 transition-all duration-200 overflow-hidden flex flex-col',
+          conversationId ? 'hidden md:flex' : 'flex'
         )}
       >
         <ConversationList
@@ -58,7 +58,7 @@ export default function ChatLayout({
       {/* Main Panel: hidden on mobile if no conversation selected */}
       <div
         className={cn(
-          'h-full flex-1 min-w-0 transition-all duration-200',
+          'h-full flex-1 min-w-0 transition-all duration-200 overflow-hidden flex flex-col',
           !conversationId ? 'hidden md:flex' : 'flex'
         )}
       >

@@ -111,10 +111,10 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
   ];
 
   return (
-    <div className="flex h-full w-full flex-col bg-sidebar border-r border-border/60 select-none">
+    <div className="flex h-full w-full flex-col bg-sidebar border-r border-border/60 select-none overflow-hidden">
 
       {/* ── Header ── */}
-      <div className="px-3.5 pt-4 pb-2.5 space-y-3">
+      <div className="px-3.5 pt-4 pb-2.5 space-y-3 shrink-0">
         {/* Top row: title + live badge + actions */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -221,7 +221,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
       </div>
 
       {/* ── List Body ── */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-2 space-y-0.5">
 
         {/* Loading skeletons */}
         {isLoading && (
@@ -311,7 +311,7 @@ export function ConversationList({ activeId, onSelect }: ConversationListProps) 
       </div>
 
       {/* ── User Footer ── */}
-      <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-3.5 py-2.5">
+      <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-3.5 py-2.5 shrink-0">
         {/* User avatar + info */}
         <div className="flex items-center gap-3 min-w-0">
           <div

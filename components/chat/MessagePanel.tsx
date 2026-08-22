@@ -275,8 +275,8 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   return (
     <div className="relative flex h-full w-full flex-col bg-background overflow-hidden">
 
-      {/* ── Sticky Header ── */}
-      <div className="sticky top-0 z-20 shrink-0">
+      {/* ── Top Header ── */}
+      <div className="shrink-0 z-20">
         <div className="flex h-16 items-center justify-between gap-3 border-b border-border/60 bg-background/85 backdrop-blur-md px-4">
           {/* Left: back + avatar + name */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -383,7 +383,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-0 relative"
+        className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 space-y-0 relative"
       >
         {/* Loading: Realistic chat bubble skeletons with shimmer */}
         {isLoading && (
