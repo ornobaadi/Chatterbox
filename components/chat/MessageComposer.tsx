@@ -10,18 +10,42 @@ interface MessageComposerProps {
   onSend: (text: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 export function MessageComposer({
   onSend,
   disabled = false,
   placeholder = 'Type a message...',
+  value: controlledValue,
+  onChange: controlledOnChange,
 }: MessageComposerProps) {
-  const [text, setText] = useState('');
+  const [internalText, setInternalText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiTriggerRef = useRef<HTMLDivElement>(null);
   const { accentColor } = useUIStore();
+
+  const isControlled = controlledValue !== undefined;
+  const text = isControlled ? controlledValue : internalText;
+
+  const setText = (newText: string | ((prev: string) => string)) => {
+    if (typeof newText === 'function') {
+      const next = newText(text);
+      if (isControlled) {
+        controlledOnChange?.(next);
+      } else {
+        setInternalText(next);
+      }
+    } else {
+      if (isControlled) {
+        controlledOnChange?.(newText);
+      } else {
+        setInternalText(newText);
+      }
+    }
+  };
 
   const canSend = text.trim().length > 0 && !disabled;
 

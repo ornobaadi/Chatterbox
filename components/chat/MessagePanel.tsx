@@ -65,6 +65,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
   const [hasScrolledInit, setHasScrolledInit] = useState(false);
   const [isSearchingInChat, setIsSearchingInChat] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [composerDraft, setComposerDraft] = useState('');
 
   // Set active conversation in store
   useEffect(() => {
@@ -426,17 +427,14 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             </div>
 
             <div className="relative z-10 max-w-sm flex flex-col items-center">
-              {/* Avatar / Brand Icon with Sparkle */}
+              {/* Clean Avatar / Brand Icon */}
               <div className="relative mb-4">
                 <Avatar
                   name={headerTitle}
                   size="lg"
                   isGroup={isGroup}
-                  className="h-16 w-16 text-xl shadow-md ring-4 ring-background"
+                  className="h-16 w-16 text-xl shadow-md ring-4 ring-background/80"
                 />
-                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-                  <Sparkles className="h-3.5 w-3.5" />
-                </div>
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight font-heading text-foreground">
@@ -445,7 +443,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed max-w-[32ch]">
                 {isGroup
                   ? 'Be the first one to send a message to kick off the conversation.'
-                  : 'Send a message or pick an icebreaker below to break the ice.'}
+                  : 'Pick an icebreaker below or type a message to start chatting.'}
               </p>
 
               {/* Quick Icebreaker Prompts */}
@@ -463,7 +461,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => handleSendMessage(prompt.text)}
+                      onClick={() => setComposerDraft(prompt.text)}
                       className="rounded-full border border-border/80 bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30 px-3.5 py-1.5 text-xs font-medium text-foreground transition-all duration-150 shadow-xs cursor-pointer active:scale-95 flex items-center gap-1.5"
                     >
                       <span>{prompt.label}</span>
@@ -541,7 +539,12 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
 
       {/* Composer */}
       <MessageComposer
-        onSend={handleSendMessage}
+        value={composerDraft}
+        onChange={setComposerDraft}
+        onSend={(text) => {
+          setComposerDraft('');
+          handleSendMessage(text);
+        }}
         disabled={isLoading || isError}
         placeholder={isGroup ? `Message ${headerTitle}...` : 'Type a message...'}
       />

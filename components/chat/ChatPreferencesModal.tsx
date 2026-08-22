@@ -14,6 +14,7 @@ import {
   Clock,
   Check,
   Sparkles,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { playIncomingChime, playSendChime } from '@/lib/audio';
@@ -73,7 +74,7 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
             <Palette className="h-3.5 w-3.5 text-primary" />
             <span>Accent Theme</span>
           </label>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {ACCENT_COLORS.map((c) => {
               const isSelected = accentColor === c.id;
               return (
@@ -247,48 +248,82 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
           </div>
         </div>
 
-        {/* 3. LIVE PREVIEW WITH HOVER TIMESTAMPS */}
-        <div className="space-y-1.5">
+        {/* 3. LIVE PREVIEW WITH FAITHFUL REPLICA */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="font-bold text-muted-foreground uppercase tracking-wider text-[10.5px] flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span>Live Preview</span>
             </label>
             <span className="text-[10px] text-muted-foreground/70 italic">
-              Hover over bubbles to view timestamps
+              Hover over bubbles to view timestamps & copy
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-border/80 bg-background/60 shadow-xs space-y-2.5">
-            {/* Received message with tooltip */}
-            <div className="flex justify-start">
-              <Tooltip content={<span>{previewTimeReceived}</span>} side="right">
-                <div
-                  className={cn(
-                    'rounded-2xl rounded-bl-xs bg-muted/70 dark:bg-muted/40 border border-border/50 text-foreground shadow-xs leading-relaxed max-w-[80%] cursor-default',
-                    density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
-                    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
-                  )}
+          <div className="p-4 sm:p-6 rounded-2xl border border-border/80 bg-background/60 shadow-xs space-y-3">
+            {/* Received message with side tooltip and hover copy */}
+            <div className="group relative flex w-full justify-start items-end gap-2">
+              <div className="relative flex flex-col max-w-[80%] sm:max-w-[70%] items-start">
+                <Tooltip
+                  content={
+                    <div className="flex items-center gap-1.5 font-normal">
+                      <span>{previewTimeReceived}</span>
+                    </div>
+                  }
+                  side="right"
                 >
-                  <p>Testing real-time message stream appearance.</p>
-                </div>
-              </Tooltip>
+                  <div
+                    className={cn(
+                      'relative transition-colors break-words leading-relaxed select-text shadow-xs',
+                      'rounded-2xl rounded-bl-xs bg-muted/70 dark:bg-muted/40 text-foreground border border-border/50 cursor-default',
+                      density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
+                      fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full bg-background border border-border shadow-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                      title="Copy message"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <p>Testing real-time message stream appearance.</p>
+                  </div>
+                </Tooltip>
+              </div>
             </div>
 
-            {/* Sent message with tooltip */}
-            <div className="flex justify-end">
-              <Tooltip content={<span>{previewTimeSent}</span>} side="left">
-                <div
-                  className={cn(
-                    'rounded-2xl rounded-br-xs shadow-xs leading-relaxed max-w-[80%] cursor-default',
-                    sentBgMap[accentColor] || sentBgMap.blue,
-                    density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
-                    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
-                  )}
+            {/* Sent message with side tooltip and hover copy */}
+            <div className="group relative flex w-full justify-end items-end gap-2">
+              <div className="relative flex flex-col max-w-[80%] sm:max-w-[70%] items-end">
+                <Tooltip
+                  content={
+                    <div className="flex items-center gap-1.5 font-normal">
+                      <span>{previewTimeSent}</span>
+                    </div>
+                  }
+                  side="left"
                 >
-                  <p>Optimistic dispatch sends in &lt; 1ms!</p>
-                </div>
-              </Tooltip>
+                  <div
+                    className={cn(
+                      'relative transition-colors break-words leading-relaxed select-text shadow-xs',
+                      'rounded-2xl rounded-br-xs cursor-default text-white',
+                      sentBgMap[accentColor] || sentBgMap.blue,
+                      density === 'compact' ? 'py-1.5 px-3' : 'py-2 px-3.5',
+                      fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm'
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="absolute -top-3 -left-3 z-10 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full bg-background border border-border shadow-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                      title="Copy message"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                    <p>Optimistic dispatch sends in &lt; 1ms!</p>
+                  </div>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </div>

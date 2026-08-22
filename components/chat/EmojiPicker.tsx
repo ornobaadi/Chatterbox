@@ -36,7 +36,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   return (
     <div
       className={cn(
-        'w-80 rounded-2xl border border-border/80 bg-popover text-popover-foreground',
+        'w-[min(calc(100vw-32px),320px)] sm:w-80 rounded-2xl border border-border/80 bg-popover text-popover-foreground',
         'shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col',
         'animate-in fade-in-0 zoom-in-95 duration-150 z-50'
       )}

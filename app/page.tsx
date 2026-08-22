@@ -145,21 +145,21 @@ export default function LandingPage() {
 
           {/* Metric Badges */}
           <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-border/60">
-            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
-              <span className="text-xl font-extrabold text-foreground font-mono">&lt; 1ms</span>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Optimistic Dispatch</p>
+            <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
+              <span className="text-xl font-bold text-foreground font-mono">&lt; 1ms</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Optimistic Dispatch</p>
             </div>
-            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
-              <span className="text-xl font-extrabold text-emerald-500 font-mono">100%</span>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Socket.io Multicast</p>
+            <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
+              <span className="text-xl font-bold text-emerald-500 font-mono">100%</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Socket.io Multicast</p>
             </div>
-            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
-              <span className="text-xl font-extrabold text-indigo-500 font-mono">400+ Users</span>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Group Admin Matrix</p>
+            <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
+              <span className="text-xl font-bold text-indigo-500 font-mono">400+ Users</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Active at any time</p>
             </div>
-            <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
-              <span className="text-xl font-extrabold text-foreground font-mono">Web Audio</span>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Synthesized Chimes</p>
+            <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
+              <span className="text-xl font-bold text-primary font-mono">Web Audio</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Synthesized Chimes</p>
             </div>
           </div>
         </section>

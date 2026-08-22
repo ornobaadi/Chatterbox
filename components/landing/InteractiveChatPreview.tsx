@@ -2,19 +2,18 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Tooltip } from '@/components/ui/tooltip';
 import {
   SendHorizonal,
-  CheckCheck,
   Sparkles,
   Users,
   User,
-  Zap,
   Volume2,
   VolumeX,
   Activity,
-  RotateCcw,
+  Smile,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { playIncomingChime, playSendChime } from '@/lib/audio';
@@ -33,7 +32,7 @@ const INITIAL_DIRECT_MESSAGES: DemoMessage[] = [
     id: '1',
     sender: 'sarah',
     senderName: 'Sarah Jenkins',
-    text: 'Hey! Did you check out the real-time Socket.io pipeline for Chatterbox?',
+    text: 'Hey! Did you test out the real-time Socket.io pipeline for Chatterbox?',
     time: '10:42 AM',
     status: 'sent',
   },
@@ -68,7 +67,7 @@ const INITIAL_GROUP_MESSAGES: DemoMessage[] = [
     id: 'g2',
     sender: 'charlie',
     senderName: 'Charlie Root (Admin)',
-    text: 'I just set up the 3+ participant admin permissions.',
+    text: 'I just verified the 3+ participant admin permissions.',
     time: '10:31 AM',
     status: 'sent',
   },
@@ -82,12 +81,20 @@ const INITIAL_GROUP_MESSAGES: DemoMessage[] = [
   },
 ];
 
-const SARAH_RESPONSES = [
-  "Sub-100ms latency feels like magic! ⚡",
-  "The smart auto-scroll keeps you from getting yanked down when reading history.",
-  "Check out how the bubbles cluster when I send multiple messages in a row!",
-  "Try creating a 3+ participant group to see the admin management tools in action 🚀",
-  "Notice how optimistic updates never jitter or duplicate on network return.",
+const PROMPT_REPLIES: Record<string, string> = {
+  'Test optimistic dispatch ⚡':
+    'Sent in < 1ms on client! The UI updates instantly and reconciles with server timestamps seamlessly.',
+  'Does it cluster messages?':
+    'Yes! Consecutive messages from the same sender cluster with clean spacing and unified rounded corners.',
+  'How does group auth work?':
+    'The creator is the initial admin. Admins can rename groups, add/remove members, and promote others to admin.',
+};
+
+const GENERIC_REPLIES = [
+  'Socket.io delivers live message:new and conversation:updated events with zero polling.',
+  'Web Audio synthesizes crisp sinusoidal chimes without downloading external MP3 files.',
+  'Messages are normalized into ISO timestamps and sorted chronologically in ascending order.',
+  'Sub-millisecond optimistic dispatch keeps your conversations flowing effortlessly.',
 ];
 
 export function InteractiveChatPreview() {
@@ -97,6 +104,7 @@ export function InteractiveChatPreview() {
   const [isTyping, setIsTyping] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [livePing, setLivePing] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Measure live ping to backend
@@ -136,6 +144,13 @@ export function InteractiveChatPreview() {
     }
   }, [messages, isTyping]);
 
+  const handleCopy = (id: string, text: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
+
   const handleSend = (textToSend?: string) => {
     const text = (textToSend || inputVal).trim();
     if (!text) return;
@@ -156,6 +171,11 @@ export function InteractiveChatPreview() {
     setMessages((prev) => [...prev, newMsg]);
     setInputVal('');
 
+    // Determine accurate response
+    const replyText =
+      PROMPT_REPLIES[text] ||
+      GENERIC_REPLIES[Math.floor(Math.random() * GENERIC_REPLIES.length)];
+
     // Simulate peer reply
     setIsTyping(true);
     setTimeout(() => {
@@ -163,25 +183,24 @@ export function InteractiveChatPreview() {
       if (audioEnabled) {
         playIncomingChime();
       }
-      const randomReply = SARAH_RESPONSES[Math.floor(Math.random() * SARAH_RESPONSES.length)];
       setMessages((prev) => [
         ...prev,
         {
           id: `reply_${Date.now()}`,
           sender: 'sarah',
           senderName: chatType === 'group' ? 'Sarah Jenkins' : 'Sarah Jenkins',
-          text: randomReply,
+          text: replyText,
           time: 'Just now',
           status: 'sent',
         },
       ]);
-    }, 1100);
+    }, 1000);
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto rounded-3xl border border-border/80 bg-card/90 shadow-2xl backdrop-blur-xl overflow-hidden text-card-foreground transition-all">
+    <div className="w-full max-w-3xl mx-auto rounded-3xl border border-border/80 bg-card/90 shadow-2xl backdrop-blur-xl overflow-hidden text-card-foreground transition-all">
       {/* Telemetry Bar */}
-      <div className="flex flex-wrap items-center justify-between px-5 py-2 border-b border-border/50 bg-muted/40 text-[11px] text-muted-foreground font-mono">
+      <div className="flex flex-wrap items-center justify-between px-5 py-2.5 border-b border-border/50 bg-muted/40 text-xs text-muted-foreground font-mono">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-emerald-500 font-semibold">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -189,8 +208,13 @@ export function InteractiveChatPreview() {
           </div>
           <span className="text-border">|</span>
           <div className="flex items-center gap-1">
-            <Activity className="h-3 w-3 text-primary" />
-            <span>Render RTT: <strong className="text-foreground">{livePing ? `${livePing}ms` : 'Measuring...'}</strong></span>
+            <Activity className="h-3.5 w-3.5 text-primary" />
+            <span>
+              Render RTT:{' '}
+              <strong className="text-foreground">
+                {livePing ? `${livePing}ms` : 'Measuring...'}
+              </strong>
+            </span>
           </div>
         </div>
 
@@ -201,114 +225,137 @@ export function InteractiveChatPreview() {
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Toggle synthesized sound cues"
           >
-            {audioEnabled ? <Volume2 className="h-3.5 w-3.5 text-primary" /> : <VolumeX className="h-3.5 w-3.5" />}
-            <span className="text-[10px]">{audioEnabled ? 'Sound On' : 'Muted'}</span>
+            {audioEnabled ? (
+              <Volume2 className="h-3.5 w-3.5 text-primary" />
+            ) : (
+              <VolumeX className="h-3.5 w-3.5" />
+            )}
+            <span className="text-xs">{audioEnabled ? 'Sound On' : 'Muted'}</span>
           </button>
         </div>
       </div>
 
-      {/* Window Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 bg-muted/20">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-rose-500/80" />
-            <div className="h-3 w-3 rounded-full bg-amber-500/80" />
-            <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
-          </div>
-          <div className="h-4 w-px bg-border mx-1" />
-          <div className="flex items-center gap-2">
-            <Avatar name={chatType === 'group' ? 'Product Core' : 'Sarah Jenkins'} size="sm" isGroup={chatType === 'group'} />
-            <div>
-              <p className="text-xs font-bold text-foreground">
+      {/* Modern Header matching actual Chat UI */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-border/60 bg-background/85 backdrop-blur-md">
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar
+            name={chatType === 'group' ? 'Product Core' : 'Sarah Jenkins'}
+            size="sm"
+            isGroup={chatType === 'group'}
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-foreground truncate">
                 {chatType === 'group' ? 'Product Core' : 'Sarah Jenkins'}
               </p>
-              <p className="text-[10px] text-muted-foreground">
-                {chatType === 'group' ? '3 participants • Active' : 'Online • Direct Chat'}
-              </p>
+              {chatType === 'group' && (
+                <span className="shrink-0 rounded-md border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  Group
+                </span>
+              )}
             </div>
+            <p className="text-xs text-muted-foreground font-mono">
+              {chatType === 'group' ? '3 participants' : 'Online • Direct Chat'}
+            </p>
           </div>
         </div>
 
         {/* Tab switch */}
-        <div className="flex items-center gap-1 bg-muted/70 p-0.5 rounded-xl border border-border/50 text-[11px]">
+        <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/50 text-xs shrink-0">
           <button
             type="button"
             onClick={() => setChatType('direct')}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer',
               chatType === 'direct'
-                ? 'bg-background text-foreground shadow-xs'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <User className="h-3 w-3" />
-            <span>1:1 Direct</span>
+            <User className="h-3.5 w-3.5" />
+            <span>Direct</span>
           </button>
           <button
             type="button"
             onClick={() => setChatType('group')}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer',
               chatType === 'group'
-                ? 'bg-background text-foreground shadow-xs'
+                ? 'bg-background text-foreground shadow-xs font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <Users className="h-3 w-3" />
+            <Users className="h-3.5 w-3.5" />
             <span>Group (3+)</span>
           </button>
         </div>
       </div>
 
-      {/* Interactive Message Feed */}
+      {/* Interactive Message Feed with accurate side tooltips and hover copy */}
       <div
         ref={scrollRef}
-        className="h-72 overflow-y-auto p-4 sm:p-5 space-y-2 bg-gradient-to-b from-background/30 to-background/80"
+        className="h-80 overflow-y-auto p-4 sm:p-6 space-y-1 bg-background/50"
       >
         {messages.map((msg, idx) => {
           const isMe = msg.sender === 'user';
           const prev = messages[idx - 1];
-          const isSameSender = prev && prev.sender === msg.sender;
+          const isFirstInCluster = !prev || prev.sender !== msg.sender;
+          const isCopied = copiedId === msg.id;
 
           return (
             <div
               key={msg.id}
               className={cn(
-                'flex w-full gap-2',
+                'group relative flex w-full items-end gap-2 transition-all',
                 isMe ? 'justify-end' : 'justify-start',
-                isSameSender ? 'mt-0.5' : 'mt-2.5'
+                isFirstInCluster ? 'mt-4' : 'mt-1'
               )}
             >
-              {!isMe && !isSameSender && (
-                <Avatar name={msg.senderName} size="sm" className="w-6 h-6 text-[10px] mt-1" />
+              {!isMe && (
+                <div className="w-7 shrink-0 self-end mb-0.5">
+                  <Avatar name={msg.senderName} size="sm" className="w-7 h-7 text-[10px]" />
+                </div>
               )}
-              {!isMe && isSameSender && <div className="w-6" />}
 
-              <div className={cn('flex flex-col max-w-[75%]', isMe ? 'items-end' : 'items-start')}>
-                {!isMe && !isSameSender && chatType === 'group' && (
-                  <span className="text-[10px] font-bold text-primary ml-2 mb-0.5">
+              <div className={cn('relative flex flex-col max-w-[80%] sm:max-w-[65%]', isMe ? 'items-end' : 'items-start')}>
+                {!isMe && isFirstInCluster && chatType === 'group' && (
+                  <span className="text-xs font-semibold text-primary ml-1 mb-1">
                     {msg.senderName}
                   </span>
                 )}
-                <div
-                  className={cn(
-                    'px-3.5 py-2 text-xs sm:text-sm rounded-2xl shadow-xs leading-relaxed break-words',
-                    isMe
-                      ? 'bg-primary text-primary-foreground rounded-tr-xs font-normal'
-                      : 'bg-card border border-border/80 text-foreground rounded-tl-xs'
-                  )}
+                <Tooltip
+                  content={
+                    <div className="flex items-center gap-1.5 font-normal">
+                      <span>{msg.time}</span>
+                      {isMe && <span className="opacity-75">· Sent</span>}
+                    </div>
+                  }
+                  side={isMe ? 'left' : 'right'}
                 >
-                  <p>{msg.text}</p>
                   <div
                     className={cn(
-                      'mt-1 flex items-center justify-end gap-1 text-[9px]',
-                      isMe ? 'text-primary-foreground/75' : 'text-muted-foreground/70'
+                      'relative transition-colors break-words leading-relaxed select-text shadow-xs px-3.5 py-2 text-xs sm:text-sm rounded-2xl cursor-default',
+                      isMe
+                        ? 'bg-blue-600 text-white rounded-br-xs'
+                        : 'bg-muted/70 dark:bg-muted/40 border border-border/50 text-foreground rounded-bl-xs'
                     )}
                   >
-                    <span>{msg.time}</span>
-                    {isMe && <CheckCheck className="h-3 w-3" />}
+                    {/* Hover copy button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopy(msg.id, msg.text, e)}
+                      className={cn(
+                        'absolute -top-3 z-10 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full bg-background border border-border shadow-xs text-muted-foreground hover:text-foreground transition-all duration-100 cursor-pointer',
+                        isMe ? '-left-3' : '-right-3'
+                      )}
+                      title="Copy message"
+                    >
+                      {isCopied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                    </button>
+
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
                   </div>
-                </div>
+                </Tooltip>
               </div>
             </div>
           );
@@ -317,8 +364,10 @@ export function InteractiveChatPreview() {
         {/* Real-time typing simulator */}
         {isTyping && (
           <div className="flex items-center gap-2 mt-2">
-            <Avatar name="Sarah Jenkins" size="sm" className="w-6 h-6 text-[10px]" />
-            <div className="flex items-center gap-1 bg-card border border-border/80 px-3 py-2 rounded-2xl rounded-tl-xs shadow-xs">
+            <div className="w-7 shrink-0">
+              <Avatar name="Sarah Jenkins" size="sm" className="w-7 h-7 text-[10px]" />
+            </div>
+            <div className="flex items-center gap-1.5 bg-muted/60 border border-border/50 px-3 py-2 rounded-2xl rounded-bl-xs shadow-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
               <span className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
               <span className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-bounce" />
@@ -327,50 +376,61 @@ export function InteractiveChatPreview() {
         )}
       </div>
 
-      {/* Suggested Quick Prompts */}
-      <div className="flex items-center gap-1.5 px-4 py-2 overflow-x-auto border-t border-border/40 bg-muted/20 text-xs">
-        <span className="text-[11px] font-medium text-muted-foreground shrink-0 flex items-center gap-1">
-          <Sparkles className="h-3 w-3 text-primary" /> Test prompt:
+      {/* Suggested Quick Prompts - wraps cleanly with no scrollbars */}
+      <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-2.5 border-t border-border/40 bg-muted/20 text-xs">
+        <span className="text-xs font-medium text-muted-foreground shrink-0 flex items-center gap-1">
+          <Sparkles className="h-3.5 w-3.5 text-primary" /> Test prompt:
         </span>
         {[
-          "Test optimistic dispatch ⚡",
-          "Does it cluster messages?",
-          "How does group auth work?",
+          'Test optimistic dispatch ⚡',
+          'Does it cluster messages?',
+          'How does group auth work?',
         ].map((prompt) => (
           <button
             key={prompt}
             type="button"
             onClick={() => handleSend(prompt)}
-            className="shrink-0 rounded-lg bg-card px-2.5 py-1 text-[11px] font-medium text-foreground border border-border/80 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer"
+            className="rounded-lg bg-card px-3 py-1 text-xs font-medium text-foreground border border-border/70 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer active:scale-95"
           >
             {prompt}
           </button>
         ))}
       </div>
 
-      {/* Interactive Input Bar */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-        className="p-3 border-t border-border/60 bg-card/80 flex items-center gap-2"
-      >
-        <input
-          type="text"
-          placeholder="Type a message to experience live optimistic send..."
-          value={inputVal}
-          onChange={(e) => setInputVal(e.target.value)}
-          className="flex-1 bg-background/70 border border-border/80 rounded-xl px-3.5 py-2 text-xs sm:text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-        <button
-          type="submit"
-          disabled={!inputVal.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 transition-all cursor-pointer"
+      {/* Interactive Composer matching actual MessageComposer design */}
+      <div className="p-3 sm:p-4 border-t border-border/60 bg-background/90">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
+          className="flex items-center gap-2 rounded-2xl border border-border/70 bg-card px-3 py-1.5 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition-all"
         >
-          <SendHorizonal className="h-4 w-4" />
-        </button>
-      </form>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors">
+            <Smile className="h-5 w-5" />
+          </div>
+          <input
+            type="text"
+            placeholder="Type a message to experience live optimistic send..."
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            className="flex-1 bg-transparent py-1.5 text-xs sm:text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!inputVal.trim()}
+            className={cn(
+              'flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl text-white transition-all cursor-pointer',
+              inputVal.trim()
+                ? 'bg-blue-600 hover:bg-blue-500 shadow-sm active:scale-95'
+                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+            )}
+            title="Send"
+          >
+            <SendHorizonal className="h-4 w-4" />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
