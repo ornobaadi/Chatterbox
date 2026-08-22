@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useUIStore } from '@/lib/store/uiStore';
 import { EmojiPicker } from './EmojiPicker';
 import { SendHorizonal, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { primeAudioContext } from '@/lib/audio';
 
 interface MessageComposerProps {
   onSend: (text: string) => void;
@@ -147,6 +148,7 @@ export function MessageComposer({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={primeAudioContext}
           placeholder={placeholder}
           disabled={disabled}
           className={cn(

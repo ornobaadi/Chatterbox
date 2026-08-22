@@ -5,21 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   MessageSquare,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
   AlertCircle,
-  Users,
-  Zap,
-  Lock,
-  Globe,
   UserCheck,
-  CheckCircle2,
   ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -142,15 +135,11 @@ export default function LoginPage() {
           {/* Left Column: Product Context & 1-Click Evaluator Presets */}
           <div className="lg:col-span-6 space-y-6">
             <div className="space-y-2">
-              <Badge variant="outline" className="h-6 gap-1 text-[11px] font-mono border-primary/30 text-primary bg-primary/10">
-                <Sparkles className="h-3 w-3" />
-                <span>Evaluator Quick-Start</span>
-              </Badge>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-heading text-foreground">
-                Sign in or provision a test account in seconds.
+                Sign in to Chatterbox.
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Chatterbox supports instant auto-registration. Click any pre-configured evaluator persona below to fill credentials immediately, or type any custom phone number.
+                Pick a test account below or enter any phone number to auto-register.
               </p>
             </div>
 
@@ -166,8 +155,7 @@ export default function LoginPage() {
                   onClick={handleGenerateGuest}
                   className="text-[11px] font-semibold text-primary hover:underline cursor-pointer flex items-center gap-1"
                 >
-                  <Sparkles className="h-3 w-3" />
-                  <span>Generate New Guest</span>
+                  <span>Generate Guest</span>
                 </button>
               </div>
 
@@ -299,14 +287,13 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {/* Assignment Mock Auth Callout */}
-              <div className="mt-6 rounded-2xl bg-muted/40 p-4 text-xs text-muted-foreground space-y-1 border border-border/40">
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  <span>Specification Notice (PRD)</span>
+              <div className="mt-6 rounded-2xl bg-muted/40 p-4 text-xs text-muted-foreground border border-border/40">
+                <div className="flex items-center gap-1.5 font-medium text-foreground mb-1">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>No password required</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  Per the take-home requirements, authentication operates against the mock Render API without password/SMS verification. JWT tokens are automatically issued and securely persisted in <code className="font-mono text-primary font-semibold">localStorage</code> and cookies.
+                  The backend auto-provisions JWT tokens. Sessions are stored in <code className="font-mono text-primary">localStorage</code> with automatic route protection.
                 </p>
               </div>
             </div>
@@ -316,7 +303,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/60 py-4 px-4 text-center text-xs text-muted-foreground font-mono text-[11px]">
-        Chatterbox Take-Home Assignment • Protected WebSocket Session
+        Chatterbox • Real-Time Messaging Platform
       </footer>
     </div>
   );

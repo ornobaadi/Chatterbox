@@ -108,8 +108,8 @@ export default function LandingPage() {
           </h1>
 
           {/* Subheading */}
-          <p className="mt-5 text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Engineered with strict separation between async server caching (TanStack Query) and real-time WebSocket state (Zustand + Socket.io), message clustering, and synthesized Web Audio feedback.
+          <p className="mt-5 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Optimistic dispatch, dual-state architecture, message clustering, and synthesized Web Audio — all without a single UI stutter.
           </p>
 
           {/* CTAs */}
@@ -133,15 +133,15 @@ export default function LandingPage() {
           <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-border/60">
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
               <span className="text-xl font-bold text-foreground font-mono">&lt; 1ms</span>
-              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Optimistic Dispatch</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Optimistic Send</p>
             </div>
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
               <span className="text-xl font-bold text-emerald-500 font-mono">100%</span>
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">Socket.io Multicast</p>
             </div>
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
-              <span className="text-xl font-bold text-indigo-500 font-mono">Admin Roles</span>
-              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Group Admin Matrix</p>
+              <span className="text-xl font-bold text-indigo-500 font-mono">Dual-State</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">TQ + Zustand</p>
             </div>
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
               <span className="text-xl font-bold text-primary font-mono">Web Audio</span>
@@ -157,7 +157,7 @@ export default function LandingPage() {
               Experience the Interface Live
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
-              Interact directly with the simulated Chatterbox client below. Send messages, hear synthesized sound cues, test real-time typing responses, and switch between 1:1 and group views.
+              Send messages, test typing indicators, hear audio cues, and toggle between 1:1 and group chats in real time.
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default function LandingPage() {
               Engineered for Zero-Jitter Precision
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
-              Inspect how optimistic reconciliation, message clustering, and dual-state architecture guarantee high performance without UI stutter.
+              See how optimistic reconciliation, message clustering, and dual-state management eliminate UI stutter and deliver zero-latency performance.
             </p>
           </div>
 
@@ -185,7 +185,7 @@ export default function LandingPage() {
               Live Backend API Inspector
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
-              Execute live OpenAPI queries directly against the Render backend database and inspect exact JSON response structures.
+              Run real-time OpenAPI queries against the backend database and inspect exact JSON responses.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export default function LandingPage() {
               Architecture Comparison
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-xl mx-auto">
-              How Chatterbox&apos;s reactive architecture compares against traditional polling implementations.
+              WebSocket vs. polling performance.
             </p>
           </div>
 
@@ -252,10 +252,10 @@ export default function LandingPage() {
         <section id="technical-specs" className="py-12 px-4 max-w-4xl mx-auto scroll-mt-20">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
-              Technical Specifications & Architecture FAQ
+              Architecture FAQ
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
-              Key engineering decisions documented for evaluation.
+              Key engineering decisions, explained.
             </p>
           </div>
 
@@ -263,28 +263,28 @@ export default function LandingPage() {
             <AccordionItem value="item-1">
               <AccordionTrigger>How does Chatterbox manage dual-state synchronization?</AccordionTrigger>
               <AccordionContent>
-                We maintain a strict boundary between async remote entity cache and the active real-time stream. <strong>TanStack Query</strong> manages conversation list indexing and user query caches with structured invalidation keys (<code className="font-mono text-primary">[&apos;conversations&apos;, user._id]</code>). <strong>Zustand</strong> manages optimistic local message dispatch and Socket.io incoming event streams with store-level deduplication, ensuring 60 FPS rendering without query thrashing.
+                TanStack Query manages server cache, while Zustand handles the optimistic message queue and live socket events for 60 FPS performance.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2">
               <AccordionTrigger>How is real-time message ordering guaranteed?</AccordionTrigger>
               <AccordionContent>
-                The backend delivers messages in reverse-chronological order while Socket.io delivers live items with Unix timestamps. Chatterbox normalizes both timestamps into ISO strings and strictly sorts the collection in <strong>ascending chronological order</strong> (<code className="font-mono text-primary">timeA - timeB</code>) before rendering, guaranteeing earliest messages at the top and newest messages at the bottom.
+                Messages are normalized to ISO timestamps and sorted ascending before rendering.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3">
-              <AccordionTrigger>Why is authentication zero-password in this implementation?</AccordionTrigger>
+              <AccordionTrigger>Why is authentication zero-password?</AccordionTrigger>
               <AccordionContent>
-                Per the Frontend Assignment specification (<code className="font-mono text-primary">PRD.md</code>), the live backend on Render provides a mock login endpoint (<code className="font-mono text-primary">POST /auth/login</code>) taking <code className="font-mono">&#123;&ldquo;phone&rdquo;, &ldquo;name&rdquo;&#125;</code> that auto-provisions JWT tokens without SMS or password gates. Chatterbox handles full session persistence in <code className="font-mono">localStorage</code> and cookies with automatic route protection.
+                The backend auto-provisions JWT tokens via a simple login request. Sessions are persisted in localStorage for ease of use.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4">
               <AccordionTrigger>How do the synthesized audio chimes work?</AccordionTrigger>
               <AccordionContent>
-                Rather than loading external MP3 audio files over the network, Chatterbox utilizes the browser&apos;s native <strong>Web Audio API</strong> (<code className="font-mono text-primary">AudioContext</code>). It synthesizes pleasant sinusoidal chime frequencies (659.25Hz E5 ➔ 880Hz A5) on incoming messages and a subtle swoosh on send, with persistent mute/unmute state in the UI.
+                Chimes are generated at runtime using the native Web Audio API, resulting in zero network payload.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -294,11 +294,11 @@ export default function LandingPage() {
         <section className="py-16 px-4 max-w-4xl mx-auto">
           <div className="rounded-2xl border border-border/70 bg-card p-8 sm:p-12 text-center relative overflow-hidden shadow-xs">
             <div className="relative z-10 max-w-md mx-auto space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-heading">
                 Ready to try Chatterbox?
               </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Connect and experience real-time messaging with live sync, synthesized chimes, and instant updates.
+              <p className="text-sm text-muted-foreground">
+                Sign in and start messaging in seconds.
               </p>
               <div className="pt-2 flex items-center justify-center gap-3">
                 <Link href={isAuthenticated ? '/chat' : '/login'}>

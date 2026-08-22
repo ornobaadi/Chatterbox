@@ -522,6 +522,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
                   isGroup={Boolean(isGroup)}
                   isFirstInGroup={isFirstInGroup}
                   isLastInGroup={isLastInGroup}
+                  isLastOverall={index === messagesList.length - 1}
                   senderParticipant={senderParticipant}
                   onRetry={handleRetryMessage}
                   onStartDirectChat={handleStartDirectChat}

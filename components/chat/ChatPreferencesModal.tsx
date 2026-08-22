@@ -4,7 +4,7 @@ import React from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { useUIStore, AccentColor, ChatDensity, FontSize, TimestampFormat } from '@/lib/store/uiStore';
+import { useUIStore, AccentColor, ChatDensity, FontSize, TimestampDisplay } from '@/lib/store/uiStore';
 import {
   Palette,
   Volume2,
@@ -13,11 +13,10 @@ import {
   Maximize2,
   Clock,
   Check,
-  Sparkles,
   Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { playIncomingChime, playSendChime } from '@/lib/audio';
+import { playIncomingChime, playSendChime, primeAudioContext } from '@/lib/audio';
 
 interface ChatPreferencesModalProps {
   isOpen: boolean;
@@ -37,13 +36,13 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
     accentColor,
     density,
     fontSize,
-    timestampFormat,
+    timestampDisplay,
     incomingSound,
     sentSound,
     setAccentColor,
     setDensity,
     setFontSize,
-    setTimestampFormat,
+    setTimestampDisplay,
     setIncomingSound,
     setSentSound,
   } = useUIStore();
@@ -56,15 +55,17 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
     monochrome: 'bg-zinc-800 text-white dark:bg-zinc-700',
   };
 
-  const previewTimeReceived = timestampFormat === 'absolute' ? '10:41 AM' : '2m ago';
-  const previewTimeSent = timestampFormat === 'absolute' ? '10:42 AM · Sent' : 'Just now · Sent';
+  const previewTooltipReceived = '10:41 AM';
+  const previewTooltipSent = '10:42 AM · Sent';
+  const previewInlineReceived = '2m ago';
+  const previewInlineSent = 'Just now';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Chat Appearance & Preferences"
-      description="Personalize your workspace aesthetics, typography, density, and sound cues."
+      description="Personalize your workspace aesthetics, typography, density, timestamps, and sound cues."
       maxWidth="2xl"
     >
       <div className="space-y-4 text-xs text-foreground">
@@ -164,43 +165,58 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
             </div>
           </div>
 
-          {/* Timestamp Hover Tooltip Format */}
+          {/* Timestamp Display Options */}
           <div className="p-3 rounded-xl border border-border/70 bg-card/40 space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="font-bold text-foreground text-xs flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-primary" />
-                <span>Hover Timestamp Format</span>
+                <span>Inline Timestamp</span>
               </label>
             </div>
-            <div className="grid grid-cols-2 gap-1 bg-muted/60 p-1 rounded-lg border border-border/50">
+            <div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-lg border border-border/50">
               <button
                 type="button"
-                onClick={() => setTimestampFormat('absolute')}
+                onClick={() => setTimestampDisplay('last_only')}
                 className={cn(
-                  'py-1.5 px-2 rounded-md text-center font-semibold text-xs transition-all cursor-pointer',
-                  timestampFormat === 'absolute'
+                  'py-1.5 px-1 rounded-md text-center font-semibold text-xs transition-all cursor-pointer',
+                  timestampDisplay === 'last_only'
                     ? 'bg-background text-foreground shadow-xs font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
+                title="Show relative timestamp only on the last message (clean)"
               >
-                Exact (10:42 AM)
+                Last Message
               </button>
               <button
                 type="button"
-                onClick={() => setTimestampFormat('relative')}
+                onClick={() => setTimestampDisplay('all')}
                 className={cn(
-                  'py-1.5 px-2 rounded-md text-center font-semibold text-xs transition-all cursor-pointer',
-                  timestampFormat === 'relative'
+                  'py-1.5 px-1 rounded-md text-center font-semibold text-xs transition-all cursor-pointer',
+                  timestampDisplay === 'all'
                     ? 'bg-background text-foreground shadow-xs font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
+                title="Show relative timestamp on all message clusters"
               >
-                Relative (5m ago)
+                All Messages
+              </button>
+              <button
+                type="button"
+                onClick={() => setTimestampDisplay('hidden')}
+                className={cn(
+                  'py-1.5 px-1 rounded-md text-center font-semibold text-xs transition-all cursor-pointer',
+                  timestampDisplay === 'hidden'
+                    ? 'bg-background text-foreground shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+                title="Hide inline timestamps; view exact time on hover"
+              >
+                Hover Only
               </button>
             </div>
           </div>
 
-          {/* Web Audio Cues */}
+          {/* Sound Effects */}
           <div className="p-3 rounded-xl border border-border/70 bg-card/40 space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="font-bold text-foreground text-xs flex items-center gap-1.5">
@@ -212,9 +228,12 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
               <button
                 type="button"
                 onClick={() => {
+                  primeAudioContext();
                   const next = !incomingSound;
                   setIncomingSound(next);
-                  if (next) playIncomingChime();
+                  if (next) {
+                    playIncomingChime();
+                  }
                 }}
                 className={cn(
                   'py-1.5 px-2 rounded-lg border text-center text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5',
@@ -230,9 +249,12 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
               <button
                 type="button"
                 onClick={() => {
+                  primeAudioContext();
                   const next = !sentSound;
                   setSentSound(next);
-                  if (next) playSendChime();
+                  if (next) {
+                    playSendChime();
+                  }
                 }}
                 className={cn(
                   'py-1.5 px-2 rounded-lg border text-center text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5',
@@ -252,22 +274,21 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="font-bold text-muted-foreground uppercase tracking-wider text-[10.5px] flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span>Live Preview</span>
             </label>
-            <span className="text-[10px] text-muted-foreground/70 italic">
-              Hover over bubbles to view timestamps & copy
+            <span className="text-[10px] text-muted-foreground/70">
+              Hover over bubbles to view exact time &amp; copy
             </span>
           </div>
 
           <div className="p-4 sm:p-6 rounded-2xl border border-border/80 bg-background/60 shadow-xs space-y-3">
-            {/* Received message with side tooltip and hover copy */}
+            {/* Received message */}
             <div className="group relative flex w-full justify-start items-end gap-2">
               <div className="relative flex flex-col max-w-[80%] sm:max-w-[70%] items-start">
                 <Tooltip
                   content={
                     <div className="flex items-center gap-1.5 font-normal">
-                      <span>{previewTimeReceived}</span>
+                      <span>{previewTooltipReceived}</span>
                     </div>
                   }
                   side="right"
@@ -290,16 +311,22 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
                     <p>Testing real-time message stream appearance.</p>
                   </div>
                 </Tooltip>
+                {/* Received message inline timestamp: Only shown if timestampDisplay is 'all' */}
+                {timestampDisplay === 'all' && (
+                  <span className="mt-0.5 text-[10px] font-mono text-muted-foreground/70 px-0.5">
+                    {previewInlineReceived}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Sent message with side tooltip and hover copy */}
+            {/* Sent message (Last message) */}
             <div className="group relative flex w-full justify-end items-end gap-2">
               <div className="relative flex flex-col max-w-[80%] sm:max-w-[70%] items-end">
                 <Tooltip
                   content={
                     <div className="flex items-center gap-1.5 font-normal">
-                      <span>{previewTimeSent}</span>
+                      <span>{previewTooltipSent}</span>
                     </div>
                   }
                   side="left"
@@ -323,6 +350,12 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
                     <p>Optimistic dispatch sends in &lt; 1ms!</p>
                   </div>
                 </Tooltip>
+                {/* Sent message inline timestamp: Shown if 'last_only' or 'all' */}
+                {timestampDisplay !== 'hidden' && (
+                  <span className="mt-0.5 text-[10px] font-mono text-muted-foreground/70 text-right px-0.5">
+                    {previewInlineSent}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -333,7 +366,7 @@ export function ChatPreferencesModal({ isOpen, onClose }: ChatPreferencesModalPr
           <span className="text-[10.5px] text-muted-foreground font-mono">
             Auto-saved in <code className="text-primary font-bold">localStorage</code>
           </span>
-          <Button onClick={onClose} className="rounded-xl text-xs font-bold px-6 h-8.5">
+          <Button onClick={onClose} className="rounded-xl text-xs font-bold px-6 h-8.5 cursor-pointer">
             Done
           </Button>
         </div>

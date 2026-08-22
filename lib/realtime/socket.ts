@@ -5,6 +5,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { Conversation, Message } from '../types';
 import { playIncomingChime } from '../audio';
 import { useUIStore } from '../store/uiStore';
+import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
 let socketInstance: Socket | null = null;
@@ -45,8 +46,12 @@ export const initSocket = (token: string, queryClient?: QueryClient): Socket => 
     const chatStore = useChatStore.getState();
     chatStore.addIncomingSocketMessage(rawMessage);
 
-    // Audio chime if incoming from another user and enabled
-    if (useUIStore.getState().incomingSound) {
+    // Only play incoming chime for messages from OTHER users
+    const currentUserId = useAuthStore.getState().user?._id;
+    const senderId = rawMessage.sender?._id || rawMessage.sender;
+    const isFromOtherUser = senderId && currentUserId && senderId !== currentUserId;
+
+    if (isFromOtherUser && useUIStore.getState().incomingSound) {
       playIncomingChime();
     }
 

@@ -3,20 +3,20 @@ import { create } from 'zustand';
 export type AccentColor = 'blue' | 'emerald' | 'purple' | 'coral' | 'monochrome';
 export type ChatDensity = 'comfortable' | 'compact';
 export type FontSize = 'sm' | 'md' | 'lg';
-export type TimestampFormat = 'absolute' | 'relative';
+export type TimestampDisplay = 'last_only' | 'all' | 'hidden';
 
 interface UIState {
   accentColor: AccentColor;
   density: ChatDensity;
   fontSize: FontSize;
-  timestampFormat: TimestampFormat;
+  timestampDisplay: TimestampDisplay;
   incomingSound: boolean;
   sentSound: boolean;
   
   setAccentColor: (color: AccentColor) => void;
   setDensity: (density: ChatDensity) => void;
   setFontSize: (size: FontSize) => void;
-  setTimestampFormat: (format: TimestampFormat) => void;
+  setTimestampDisplay: (display: TimestampDisplay) => void;
   setIncomingSound: (enabled: boolean) => void;
   setSentSound: (enabled: boolean) => void;
 }
@@ -24,12 +24,12 @@ interface UIState {
 const UI_SETTINGS_KEY = 'chatterbox_ui_settings';
 
 export const useUIStore = create<UIState>((set, get) => {
-  // Load saved settings
+  // Default settings: Only the last message displays relative timestamp by default
   let initialSettings = {
     accentColor: 'blue' as AccentColor,
     density: 'comfortable' as ChatDensity,
     fontSize: 'md' as FontSize,
-    timestampFormat: 'absolute' as TimestampFormat,
+    timestampDisplay: 'last_only' as TimestampDisplay,
     incomingSound: true,
     sentSound: true,
   };
@@ -38,7 +38,20 @@ export const useUIStore = create<UIState>((set, get) => {
     try {
       const saved = localStorage.getItem(UI_SETTINGS_KEY);
       if (saved) {
-        initialSettings = { ...initialSettings, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        // Handle migration from previous timestampFormat key if present
+        let display: TimestampDisplay = 'last_only';
+        if (parsed.timestampDisplay) {
+          display = parsed.timestampDisplay;
+        } else if (parsed.timestampFormat === 'absolute') {
+          display = 'all';
+        }
+
+        initialSettings = {
+          ...initialSettings,
+          ...parsed,
+          timestampDisplay: display,
+        };
       }
     } catch {}
   }
@@ -70,9 +83,9 @@ export const useUIStore = create<UIState>((set, get) => {
       persist({ fontSize });
     },
 
-    setTimestampFormat: (timestampFormat) => {
-      set({ timestampFormat });
-      persist({ timestampFormat });
+    setTimestampDisplay: (timestampDisplay) => {
+      set({ timestampDisplay });
+      persist({ timestampDisplay });
     },
 
     setIncomingSound: (incomingSound) => {

@@ -6,7 +6,7 @@ import { useUIStore } from '@/lib/store/uiStore';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Check, CheckCheck, Loader2, AlertCircle, RotateCw, Copy } from 'lucide-react';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 interface MessageBubbleProps {
@@ -15,6 +15,7 @@ interface MessageBubbleProps {
   isGroup: boolean;
   isFirstInGroup: boolean;
   isLastInGroup: boolean;
+  isLastOverall?: boolean;
   senderParticipant?: DirectParticipant;
   onRetry?: (message: Message) => void;
   onStartDirectChat?: (participant: DirectParticipant) => void;
@@ -34,32 +35,53 @@ export function MessageBubble({
   isGroup,
   isFirstInGroup,
   isLastInGroup,
+  isLastOverall = false,
   senderParticipant,
   onRetry,
   onStartDirectChat,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
-  const { accentColor, density, fontSize } = useUIStore();
+  const { accentColor, density, fontSize, timestampDisplay } = useUIStore();
 
   const senderName = senderParticipant?.name || 'Participant';
   const status = message.status || 'sent';
   const hue = senderHue(message.sender || '');
 
+  // Always show exact time in tooltip on hover (e.g. "3:35 PM" or "Yesterday · 3:35 PM")
   const formatTooltipTime = (dateString: string): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-
-    if (isToday(date)) {
-      return format(date, 'h:mm a');
-    }
-    if (isYesterday(date)) {
-      return `Yesterday at ${format(date, 'h:mm a')}`;
-    }
+    if (isToday(date)) return format(date, 'h:mm a');
+    if (isYesterday(date)) return `Yesterday · ${format(date, 'h:mm a')}`;
     return format(date, 'MMM d, yyyy · h:mm a');
   };
 
+  // Inline time shown underneath bubble (relative time: "Just now", "2m ago")
+  const formatInlineTime = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const diff = Date.now() - date.getTime();
+    if (diff < 60000) return 'Just now';
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
   const tooltipTime = formatTooltipTime(message.createdAt);
+  const inlineTime = formatInlineTime(message.createdAt);
+
+  // Determine whether this bubble should display an inline timestamp
+  const showInlineTimestamp = () => {
+    if (status === 'sending' || status === 'failed') return false;
+    if (timestampDisplay === 'hidden') return false;
+    if (timestampDisplay === 'last_only') {
+      return Boolean(isLastOverall);
+    }
+    if (timestampDisplay === 'all') {
+      return Boolean(isLastInGroup);
+    }
+    return Boolean(isLastOverall);
+  };
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -183,6 +205,18 @@ export function MessageBubble({
             <p className="whitespace-pre-wrap">{message.text}</p>
           </div>
         </Tooltip>
+
+        {/* Inline timestamp — shown based on customization (Default: Last message only) */}
+        {showInlineTimestamp() && inlineTime && (
+          <span
+            className={cn(
+              'mt-0.5 text-[10px] font-mono select-none px-0.5',
+              isMe ? 'text-muted-foreground/70 text-right' : 'text-muted-foreground/70 text-left'
+            )}
+          >
+            {inlineTime}
+          </span>
+        )}
 
         {/* Status icon for sent message if failed or sending */}
         {isMe && status === 'sending' && (
