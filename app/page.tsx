@@ -114,7 +114,7 @@ export default function LandingPage() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight font-heading leading-[1.1] text-foreground">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight font-heading leading-[1.1] text-foreground">
             The real-time chat engine built for{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-indigo-600">
               sub-millisecond feel.
@@ -154,7 +154,7 @@ export default function LandingPage() {
               <p className="text-[11px] text-muted-foreground mt-0.5">Socket.io Multicast</p>
             </div>
             <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">
-              <span className="text-xl font-extrabold text-indigo-500 font-mono">3+ Users</span>
+              <span className="text-xl font-extrabold text-indigo-500 font-mono">400+ Users</span>
               <p className="text-[11px] text-muted-foreground mt-0.5">Group Admin Matrix</p>
             </div>
             <div className="p-3 rounded-xl border border-border/60 bg-card/40 text-center">

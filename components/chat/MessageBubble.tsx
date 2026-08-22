@@ -17,6 +17,7 @@ interface MessageBubbleProps {
   isLastInGroup: boolean;
   senderParticipant?: DirectParticipant;
   onRetry?: (message: Message) => void;
+  onStartDirectChat?: (participant: DirectParticipant) => void;
 }
 
 function senderHue(id: string): number {
@@ -35,6 +36,7 @@ export function MessageBubble({
   isLastInGroup,
   senderParticipant,
   onRetry,
+  onStartDirectChat,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const { accentColor, density, fontSize } = useUIStore();
@@ -94,13 +96,15 @@ export function MessageBubble({
       {!isMe && isGroup && (
         <div className="w-7 shrink-0 self-end mb-0.5">
           {isLastInGroup ? (
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full text-white text-xs font-bold select-none shadow-xs"
+            <button
+              type="button"
+              onClick={() => senderParticipant && onStartDirectChat?.(senderParticipant)}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-white text-xs font-bold select-none shadow-xs hover:scale-110 active:scale-95 transition-all cursor-pointer"
               style={{ backgroundColor: `hsl(${hue}, 55%, 45%)` }}
-              title={senderName}
+              title={senderParticipant ? `Direct message ${senderName}` : senderName}
             >
               {senderName[0]?.toUpperCase()}
-            </div>
+            </button>
           ) : (
             <div className="w-7" />
           )}
@@ -114,14 +118,17 @@ export function MessageBubble({
           isMe ? 'items-end' : 'items-start'
         )}
       >
-        {/* Sender name for group chats */}
+        {/* Sender name for group chats - click to DM */}
         {!isMe && isGroup && isFirstInGroup && (
-          <span
-            className="mb-1 ml-1 text-xs font-semibold select-none"
+          <button
+            type="button"
+            onClick={() => senderParticipant && onStartDirectChat?.(senderParticipant)}
+            className="mb-1 ml-1 text-xs font-semibold select-none hover:underline inline-flex items-center gap-1 cursor-pointer transition-colors text-left"
             style={{ color: `hsl(${hue}, 60%, 45%)` }}
+            title={senderParticipant ? `Click to direct message ${senderName}` : senderName}
           >
-            {senderName}
-          </span>
+            <span>{senderName}</span>
+          </button>
         )}
 
         {/* Message Bubble with Tooltip for Hover Timestamp */}

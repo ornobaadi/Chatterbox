@@ -10,14 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, UserMinus, UserPlus, Edit3, LogOut, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Crown, UserMinus, UserPlus, Edit3, LogOut, Check, Loader2, AlertCircle, MessageSquare } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
+import { cn } from '@/lib/utils';
 
 interface GroupInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   conversation: Conversation;
   onLeaveSuccess: () => void;
+  onStartDirectChat?: (participant: DirectParticipant) => void;
 }
 
 export function GroupInfoModal({
@@ -25,6 +27,7 @@ export function GroupInfoModal({
   onClose,
   conversation,
   onLeaveSuccess,
+  onStartDirectChat,
 }: GroupInfoModalProps) {
   const currentUserId = useAuthStore((s) => s.user?._id);
   const queryClient = useQueryClient();
@@ -34,6 +37,7 @@ export function GroupInfoModal({
   const [isAddingMembers, setIsAddingMembers] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [selectedNewUsers, setSelectedNewUsers] = useState<User[]>([]);
+  const [isConfirmingLeave, setIsConfirmingLeave] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isAdmin = Boolean(
@@ -261,11 +265,25 @@ export function GroupInfoModal({
                   key={member._id}
                   className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border/50 text-xs"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={cn(
+                      'flex items-center gap-2.5 min-w-0 flex-1',
+                      !isMe && onStartDirectChat ? 'cursor-pointer group/member' : ''
+                    )}
+                    onClick={() => {
+                      if (!isMe && onStartDirectChat) {
+                        onStartDirectChat(member);
+                        onClose();
+                      }
+                    }}
+                  >
                     <Avatar name={member.name} size="sm" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-foreground truncate">
+                        <span className={cn(
+                          'font-semibold text-foreground truncate',
+                          !isMe && onStartDirectChat ? 'group-hover/member:text-primary transition-colors' : ''
+                        )}>
                           {member.name} {isMe && '(You)'}
                         </span>
                         {isMemberAdmin && (
@@ -280,12 +298,15 @@ export function GroupInfoModal({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     {isAdmin && !isMemberAdmin && !isMe && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => promoteMutation.mutate(member._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          promoteMutation.mutate(member._id);
+                        }}
                         disabled={promoteMutation.isPending}
                         className="h-7 text-[11px] px-2"
                         title="Promote to admin"
@@ -298,7 +319,10 @@ export function GroupInfoModal({
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => removeMemberMutation.mutate(member._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeMemberMutation.mutate(member._id);
+                        }}
                         disabled={removeMemberMutation.isPending}
                         className="h-7 w-7 p-0"
                         title="Remove member"
@@ -313,27 +337,64 @@ export function GroupInfoModal({
           </div>
         </div>
 
-        {/* Leave Group Action */}
-        <div className="pt-2 border-t border-border/50 flex justify-between items-center">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => {
-              if (currentUserId && confirm('Are you sure you want to leave this group?')) {
-                removeMemberMutation.mutate(currentUserId);
-              }
-            }}
-            disabled={removeMemberMutation.isPending}
-            className="h-9 text-xs gap-1.5"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Leave Group</span>
-          </Button>
+        {/* Leave Group Inline Confirmation or Action */}
+        {isConfirmingLeave ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 space-y-2.5 animate-in fade-in-0 duration-150">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-destructive">Leave this group?</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  You will no longer receive or send messages in <strong className="text-foreground">{conversation.name}</strong>.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsConfirmingLeave(false)}
+                className="h-7.5 text-xs px-3"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  if (currentUserId) {
+                    removeMemberMutation.mutate(currentUserId);
+                  }
+                }}
+                disabled={removeMemberMutation.isPending}
+                className="h-7.5 text-xs px-3 font-semibold gap-1.5"
+              >
+                {removeMemberMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <LogOut className="h-3 w-3" />
+                )}
+                <span>Yes, Leave</span>
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="pt-2 border-t border-border/50 flex justify-between items-center">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsConfirmingLeave(true)}
+              className="h-8.5 text-xs gap-1.5"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Leave Group</span>
+            </Button>
 
-          <Button variant="outline" size="sm" onClick={onClose} className="h-9 text-xs">
-            Done
-          </Button>
-        </div>
+            <Button variant="outline" size="sm" onClick={onClose} className="h-8.5 text-xs px-4">
+              Done
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

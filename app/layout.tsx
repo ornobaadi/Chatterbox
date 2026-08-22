@@ -1,13 +1,21 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Fraunces, Geist_Mono, Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/app/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
-const geistHeading = Geist({ subsets: ['latin'], variable: '--font-heading' });
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' });
+const frauncesHeading = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  weight: ['400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
+});
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
@@ -41,7 +49,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", spaceGrotesk.variable, geistHeading.variable)}
+      className={cn("antialiased", fontMono.variable, "font-sans", geistSans.variable, frauncesHeading.variable)}
     >
       <body>
         <ThemeProvider>

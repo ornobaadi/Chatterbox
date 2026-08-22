@@ -5,6 +5,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { Conversation, Message } from '../types';
 import { playIncomingChime } from '../audio';
 import { useUIStore } from '../store/uiStore';
+import { toast } from 'sonner';
 
 let socketInstance: Socket | null = null;
 
@@ -89,9 +90,12 @@ export const initSocket = (token: string, queryClient?: QueryClient): Socket => 
   // Real-time conversation updated (group rename, member changes, new group)
   socketInstance.on('conversation:updated', (updatedConv: Conversation) => {
     console.log('[Socket.io] conversation:updated:', updatedConv);
+    if (updatedConv?.type === 'group' && updatedConv.name) {
+      toast.info(`Group info updated: ${updatedConv.name}`, { duration: 2500 });
+    }
     if (queryClient) {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      if (updatedConv._id) {
+      if (updatedConv?._id) {
         queryClient.invalidateQueries({ queryKey: ['conversation', updatedConv._id] });
       }
     }

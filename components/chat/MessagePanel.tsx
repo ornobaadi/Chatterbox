@@ -213,6 +213,29 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
     sendMutation.mutate({ text: failedMessage.text, tempId });
   };
 
+  const handleStartDirectChat = async (participant?: DirectParticipant) => {
+    if (!participant?._id || participant._id === currentUserId) return;
+
+    // 1. Check if direct chat already exists in user's conversations
+    const existing = conversations.find(
+      (c) => c.type === 'direct' && c.participant?._id === participant._id
+    );
+
+    if (existing) {
+      router.push(`/chat/${existing._id}`);
+      return;
+    }
+
+    // 2. Otherwise create a new direct conversation
+    try {
+      const newConv = await conversationsApi.createDirectConversation(participant._id);
+      queryClient.invalidateQueries({ queryKey: ['conversations', currentUserId] });
+      router.push(`/chat/${newConv._id}`);
+    } catch {
+      // Fallback
+    }
+  };
+
   const isGroup = activeConversation?.type === 'group';
   const headerTitle = isGroup
     ? activeConversation?.name || 'Group'
@@ -361,14 +384,26 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-0 relative"
       >
-        {/* Loading: shaped bubble skeletons */}
+        {/* Loading: Realistic chat bubble skeletons with shimmer */}
         {isLoading && (
-          <div className="space-y-4 py-6 max-w-lg mx-auto">
-            {[{w:'w-44',side:'start'},{w:'w-60',side:'end'},{w:'w-52',side:'start'},{w:'w-36',side:'end'}].map((s,i)=>(
-              <div key={i} className={`flex justify-${s.side}`}>
-                <Skeleton className={`h-10 ${s.w} rounded-2xl ${s.side==='end' ? 'bg-primary/15' : 'bg-muted/60'}`} />
-              </div>
-            ))}
+          <div className="space-y-4 py-8 max-w-xl mx-auto px-2">
+            <div className="flex justify-center my-2">
+              <Skeleton className="h-6 w-24 rounded-full bg-muted/60" />
+            </div>
+            <div className="flex items-end gap-2.5 justify-start">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <Skeleton className="h-12 w-48 sm:w-56 rounded-2xl rounded-bl-xs" />
+            </div>
+            <div className="flex items-end gap-2.5 justify-end">
+              <Skeleton className="h-10 w-60 sm:w-72 rounded-2xl rounded-br-xs bg-primary/20" />
+            </div>
+            <div className="flex items-end gap-2.5 justify-start">
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+              <Skeleton className="h-16 w-64 sm:w-80 rounded-2xl rounded-bl-xs" />
+            </div>
+            <div className="flex items-end gap-2.5 justify-end">
+              <Skeleton className="h-10 w-40 rounded-2xl rounded-br-xs bg-primary/20" />
+            </div>
           </div>
         )}
 
@@ -383,17 +418,59 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Playful & Modern Empty State for New Conversations */}
         {!isLoading && !isError && messagesList.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-              <MessageCircle className="h-6 w-6" />
+          <div className="flex h-full flex-col items-center justify-center p-6 text-center relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">No messages yet</p>
-              <p className="mt-1 max-w-[22ch] text-xs text-muted-foreground">
-                Say hello! Your conversation starts here.
+
+            <div className="relative z-10 max-w-sm flex flex-col items-center">
+              {/* Avatar / Brand Icon with Sparkle */}
+              <div className="relative mb-4">
+                <Avatar
+                  name={headerTitle}
+                  size="lg"
+                  isGroup={isGroup}
+                  className="h-16 w-16 text-xl shadow-md ring-4 ring-background"
+                />
+                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight font-heading text-foreground">
+                {isGroup ? `Welcome to ${headerTitle}!` : `Say hello to ${headerTitle}!`}
+              </h3>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed max-w-[32ch]">
+                {isGroup
+                  ? 'Be the first one to send a message to kick off the conversation.'
+                  : 'Send a message or pick an icebreaker below to break the ice.'}
               </p>
+
+              {/* Quick Icebreaker Prompts */}
+              <div className="mt-6 w-full space-y-2">
+                <span className="text-[10.5px] font-semibold text-muted-foreground/70 uppercase tracking-wider block">
+                  Quick Icebreakers
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {[
+                    { label: '👋 Wave hello', text: 'Hey! How are you doing?' },
+                    { label: "🚀 How's the project?", text: "Hey! How's the project coming along?" },
+                    { label: '✨ Quick catch-up?', text: 'Hey, got a minute to chat?' },
+                    { label: '☕ Coffee break?', text: 'Time for a quick coffee break! ☕' },
+                  ].map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSendMessage(prompt.text)}
+                      className="rounded-full border border-border/80 bg-card/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30 px-3.5 py-1.5 text-xs font-medium text-foreground transition-all duration-150 shadow-xs cursor-pointer active:scale-95 flex items-center gap-1.5"
+                    >
+                      <span>{prompt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -449,6 +526,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
                   isLastInGroup={isLastInGroup}
                   senderParticipant={senderParticipant}
                   onRetry={handleRetryMessage}
+                  onStartDirectChat={handleStartDirectChat}
                 />
               </React.Fragment>
             );
@@ -478,6 +556,7 @@ export function MessagePanel({ conversationId, onBack }: MessagePanelProps) {
             if (onBack) onBack();
             else router.push('/chat');
           }}
+          onStartDirectChat={handleStartDirectChat}
         />
       )}
     </div>

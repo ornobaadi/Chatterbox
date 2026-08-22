@@ -146,7 +146,7 @@ export default function LoginPage() {
                 <Sparkles className="h-3 w-3" />
                 <span>Evaluator Quick-Start</span>
               </Badge>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight font-heading text-foreground">
                 Sign in or provision a test account in seconds.
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
