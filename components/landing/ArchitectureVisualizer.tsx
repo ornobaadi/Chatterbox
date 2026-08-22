@@ -10,12 +10,8 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertTriangle,
-  Clock,
   Layers,
-  Sparkles,
-  ArrowRight,
   Database,
-  Radio,
 } from 'lucide-react';
 
 export function ArchitectureVisualizer() {

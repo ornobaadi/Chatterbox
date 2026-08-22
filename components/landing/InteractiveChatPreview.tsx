@@ -5,7 +5,6 @@ import { Avatar } from '@/components/ui/avatar';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
   SendHorizonal,
-  Sparkles,
   Users,
   User,
   Volume2,
@@ -48,7 +47,7 @@ const INITIAL_DIRECT_MESSAGES: DemoMessage[] = [
     id: '3',
     sender: 'sarah',
     senderName: 'Sarah Jenkins',
-    text: 'Plus message clustering and auto-scroll pills make the UX feel so polished ✨',
+    text: 'Plus message clustering and auto-scroll pills make the UX feel so polished.',
     time: '10:44 AM',
     status: 'sent',
   },
@@ -376,11 +375,9 @@ export function InteractiveChatPreview() {
         )}
       </div>
 
-      {/* Suggested Quick Prompts - wraps cleanly with no scrollbars */}
+      {/* Suggested Quick Prompts - populates composer, does not auto-send */}
       <div className="flex flex-wrap items-center gap-2 px-4 sm:px-6 py-2.5 border-t border-border/40 bg-muted/20 text-xs">
-        <span className="text-xs font-medium text-muted-foreground shrink-0 flex items-center gap-1">
-          <Sparkles className="h-3.5 w-3.5 text-primary" /> Test prompt:
-        </span>
+        <span className="text-xs font-medium text-muted-foreground shrink-0">Try:</span>
         {[
           'Test optimistic dispatch ⚡',
           'Does it cluster messages?',
@@ -389,7 +386,7 @@ export function InteractiveChatPreview() {
           <button
             key={prompt}
             type="button"
-            onClick={() => handleSend(prompt)}
+            onClick={() => setInputVal(prompt)}
             className="rounded-lg bg-card px-3 py-1 text-xs font-medium text-foreground border border-border/70 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer active:scale-95"
           >
             {prompt}

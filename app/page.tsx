@@ -12,22 +12,8 @@ import { ArchitectureVisualizer } from '@/components/landing/ArchitectureVisuali
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   MessageSquare,
-  Zap,
-  ShieldCheck,
-  Users,
-  Sparkles,
   ArrowRight,
-  Code2,
-  Layers,
-  Cpu,
-  CheckCircle2,
-  ExternalLink,
-  ChevronRight,
-  Activity,
   Terminal,
-  Volume2,
-  FileText,
-  Lock,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -154,8 +140,8 @@ export default function LandingPage() {
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">Socket.io Multicast</p>
             </div>
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
-              <span className="text-xl font-bold text-indigo-500 font-mono">400+ Users</span>
-              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Active at any time</p>
+              <span className="text-xl font-bold text-indigo-500 font-mono">Admin Roles</span>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Group Admin Matrix</p>
             </div>
             <div className="p-3.5 rounded-2xl border border-border/60 bg-card/60 text-center shadow-xs">
               <span className="text-xl font-bold text-primary font-mono">Web Audio</span>
